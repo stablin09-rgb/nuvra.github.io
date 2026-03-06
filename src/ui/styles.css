@@ -1,0 +1,336 @@
+/* ============================================================
+   Nuvra Foundation — Phase 0–1 Styles
+   A clean, production-grade base. No decorative fluff.
+   ============================================================ */
+
+/* ── Reset & Base ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-base:      #0d1117;
+  --bg-surface:   #161b22;
+  --bg-elevated:  #21262d;
+  --border:       #30363d;
+  --border-muted: #21262d;
+  --text-primary: #f0f6fc;
+  --text-secondary: #c9d1d9;
+  --text-muted:   #8b949e;
+  --accent:       #388bfd;
+  --accent-hover: #58a6ff;
+  --success:      #3fb950;
+  --warning:      #d29922;
+  --danger:       #f85149;
+  --radius:       6px;
+  --toolbar-h:    48px;
+  --sidebar-w:    240px;
+  --font:         -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:    'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Screen Reader Only ───────────────────────────────────── */
+.nv-sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+/* ── App Root ─────────────────────────────────────────────── */
+#nv-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Toolbar ──────────────────────────────────────────────── */
+.nv-toolbar {
+  height: var(--toolbar-h);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-muted);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.nv-toolbar-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.nv-toolbar-inner::-webkit-scrollbar { display: none; }
+
+/* ── Brand ────────────────────────────────────────────────── */
+.nv-brand {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+  flex-shrink: 0;
+}
+.nv-brand span { color: var(--accent); }
+
+/* ── Divider ──────────────────────────────────────────────── */
+.nv-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  flex-shrink: 0;
+  margin: 0 4px;
+}
+
+/* ── Buttons ──────────────────────────────────────────────── */
+.nv-btn {
+  padding: 5px 12px;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  flex-shrink: 0;
+}
+.nv-btn:hover:not(:disabled) {
+  background: #2d333b;
+  color: var(--text-primary);
+  border-color: #484f58;
+}
+.nv-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.nv-btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.nv-btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+.nv-btn-danger {
+  color: var(--danger);
+  border-color: rgba(248,81,73,0.3);
+}
+.nv-btn-danger:hover:not(:disabled) {
+  background: rgba(248,81,73,0.1);
+  border-color: var(--danger);
+}
+
+/* ── Device Group ─────────────────────────────────────────── */
+.nv-device-group { display: flex; gap: 2px; }
+.nv-device-btn.active {
+  background: rgba(56,139,253,0.15);
+  color: var(--accent);
+  border-color: rgba(56,139,253,0.4);
+}
+
+/* ── Select ───────────────────────────────────────────────── */
+.nv-select {
+  padding: 5px 8px;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12px;
+  cursor: pointer;
+  max-width: 160px;
+}
+.nv-select:focus { outline: none; border-color: var(--accent); }
+
+/* ── Zoom Label ───────────────────────────────────────────── */
+.nv-zoom-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  min-width: 38px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Save Indicator ───────────────────────────────────────── */
+.nv-save-indicator {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.nv-save-indicator.dirty  { color: var(--warning); background: rgba(210,153,34,0.1); }
+.nv-save-indicator.clean  { color: var(--success);  background: rgba(63,185,80,0.1); }
+
+/* ── Body ─────────────────────────────────────────────────── */
+.nv-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────── */
+.nv-sidebar {
+  width: var(--sidebar-w);
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-muted);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.nv-sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-muted);
+  flex-shrink: 0;
+}
+.nv-sidebar-tab {
+  flex: 1;
+  padding: 9px 4px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+}
+.nv-sidebar-tab:hover  { color: var(--text-secondary); }
+.nv-sidebar-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.nv-sidebar-content { flex: 1; overflow-y: auto; }
+.nv-panel { display: none; padding: 12px; }
+.nv-panel.active { display: block; }
+.nv-panel-placeholder {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-style: italic;
+  text-align: center;
+  padding: 24px 8px;
+}
+
+/* ── Canvas ───────────────────────────────────────────────── */
+.nv-canvas {
+  flex: 1;
+  background: var(--bg-base);
+  overflow: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px;
+}
+.nv-canvas-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+.nv-canvas-wrapper { width: 100%; }
+.nv-canvas-frame {
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.4);
+  min-height: 400px;
+}
+.nv-canvas-device-label {
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--border-muted);
+}
+.nv-canvas-surface {
+  padding: 32px;
+  background: #fff;
+  min-height: 360px;
+}
+.nv-canvas-page-info h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 4px;
+}
+.nv-canvas-slug   { color: #555; font-size: 13px; font-family: var(--font-mono); margin-bottom: 4px; }
+.nv-canvas-type   { color: #777; font-size: 12px; margin-bottom: 4px; }
+.nv-canvas-desc   { color: #555; font-size: 13px; margin-bottom: 24px; }
+.nv-canvas-placeholder {
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  padding: 40px;
+  text-align: center;
+  color: #aaa;
+}
+.nv-canvas-placeholder span { font-size: 32px; display: block; margin-bottom: 12px; }
+.nv-canvas-placeholder p    { font-size: 13px; margin-bottom: 6px; }
+.nv-canvas-hint { font-size: 11px; color: #bbb; }
+
+/* ── Toasts ───────────────────────────────────────────────── */
+.nv-toasts {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 9000;
+  pointer-events: none;
+}
+.nv-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  max-width: 360px;
+  pointer-events: all;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  animation: nv-toast-in 0.2s ease;
+}
+@keyframes nv-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.nv-toast-info    { background: #1f6feb; color: #fff; }
+.nv-toast-success { background: #238636; color: #fff; }
+.nv-toast-warning { background: #9e6a03; color: #fff; }
+.nv-toast-error   { background: #da3633; color: #fff; }
+.nv-toast-msg     { flex: 1; }
+.nv-toast-close {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+.nv-toast-close:hover { color: #fff; }
+
+/* ── Diagnostics Overlay (injected by errorBoundary.js) ───── */
+/* Styles are inlined in errorBoundary.js for isolation */
+
+/* ── Scrollbars ───────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #484f58; }

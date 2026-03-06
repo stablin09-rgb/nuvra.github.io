@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nuvra — Foundation</title>
+  <meta name="description" content="Nuvra Foundation — Phase 0–1: Deterministic Core, Live Runtime, Non-Static Editor" />
+
+  <!-- Nuvra Foundation Styles -->
+  <link rel="stylesheet" href="./src/ui/styles.css" />
+</head>
+<body>
+
+  <!--
+    #nv-app is the single mount point for the entire application.
+    The editorShell module builds the full UI inside this element.
+    Nothing is hardcoded here — all UI is state-driven.
+  -->
+  <div id="nv-app"></div>
+
+  <!--
+    Boot sequence.
+    type="module" enables ES module imports and defers execution
+    until the DOM is ready.
+  -->
+  <script type="module" src="./src/main.js"></script>
+
+</body>
+</html>
