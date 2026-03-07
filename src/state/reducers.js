@@ -254,6 +254,70 @@ export function appReducer(state = APP_INITIAL, action) {
   }
 }
 
+// ─── Preview Reducer ─────────────────────────────────────────────────────────
+const PREVIEW_INITIAL = {
+  state:    'idle',    // PreviewState
+  viewport: 'desktop', // 'desktop' | 'tablet' | 'mobile'
+  debug:    false,
+};
+
+export function previewReducer(state = PREVIEW_INITIAL, action) {
+  switch (action.type) {
+    case 'PREVIEW/SET_STATE':
+      return { ...state, state: action.payload };
+    case 'PREVIEW/SET_VIEWPORT':
+      return { ...state, viewport: action.payload };
+    case 'PREVIEW/SET_DEBUG':
+      return { ...state, debug: action.payload };
+    default:
+      return state;
+  }
+}
+
+// ─── Publish Reducer ──────────────────────────────────────────────────────────
+const PUBLISH_INITIAL = {
+  stage:      'idle',  // PipelineStage
+  lastResult: null,    // Last publish result
+  error:      null,    // Last publish error
+};
+
+export function publishReducer(state = PUBLISH_INITIAL, action) {
+  switch (action.type) {
+    case 'PUBLISH/SET_STAGE':
+      return { ...state, stage: action.payload, error: null };
+    case 'PUBLISH/SET_RESULT':
+      return { ...state, stage: 'complete', lastResult: action.payload, error: null };
+    case 'PUBLISH/SET_ERROR':
+      return { ...state, stage: 'error', error: action.payload };
+    default:
+      return state;
+  }
+}
+
+// ─── Runtime Errors Reducer ───────────────────────────────────────────────────
+const RUNTIME_ERRORS_INITIAL = {
+  errors: [], // RuntimeError[]
+};
+
+export function runtimeErrorsReducer(state = RUNTIME_ERRORS_INITIAL, action) {
+  switch (action.type) {
+    case 'RUNTIME/ADD_ERROR':
+      return { ...state, errors: [...state.errors.slice(-99), action.payload] };
+    case 'RUNTIME/MARK_ERROR_RECOVERED': {
+      return {
+        ...state,
+        errors: state.errors.map(e =>
+          e.id === action.payload ? { ...e, recovered: true } : e
+        ),
+      };
+    }
+    case 'RUNTIME/CLEAR_ERRORS':
+      return { ...state, errors: [] };
+    default:
+      return state;
+  }
+}
+
 // ─── Root Reducer ─────────────────────────────────────────────────────────────
 /**
  * Combines all slice reducers into a single root reducer.
@@ -263,12 +327,15 @@ export function appReducer(state = APP_INITIAL, action) {
  */
 export function rootReducer(state = {}, action) {
   return {
-    editor: editorReducer(state.editor, action),
-    pages:  pagesReducer(state.pages,  action),
-    ui:     uiReducer(state.ui,     action),
-    flags:  flagsReducer(state.flags,  action),
-    ai:     aiReducer(state.ai,     action),
-    app:    appReducer(state.app,    action),
+    editor:        editorReducer(state.editor,        action),
+    pages:         pagesReducer(state.pages,          action),
+    ui:            uiReducer(state.ui,                action),
+    flags:         flagsReducer(state.flags,          action),
+    ai:            aiReducer(state.ai,                action),
+    app:           appReducer(state.app,              action),
+    preview:       previewReducer(state.preview,      action),
+    publish:       publishReducer(state.publish,      action),
+    runtimeErrors: runtimeErrorsReducer(state.runtimeErrors, action),
   };
 }
 

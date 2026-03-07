@@ -1,5 +1,5 @@
 /**
- * main.js — Nuvra Phase 3
+ * main.js — Nuvra Phase 4
  *
  * The application boot sequence.
  *
@@ -13,12 +13,17 @@
  *  7. Wire persistence auto-save
  *  8. Wire save-requested event
  *  9. Wire online/offline detection
- * 10. Mark as booted
+ * 10. Wire App Runtime activation
+ * 11. Wire Preview Mode activation/exit
+ * 12. Wire Publish Pipeline events
+ * 13. Mark as booted
  *
- * Phase 3 additions:
- *  - AppRuntime is registered as a module
- *  - AppRuntime boots when an AppSchema is present in state
- *  - Editor shell gains an App Builder panel
+ * Phase 4 additions:
+ *  - PreviewMode is wired to editor:enter_preview / editor:exit_preview events
+ *  - PublishPipeline is wired to publish:run events
+ *  - Preview state slice is added to the store
+ *  - Publish state slice is added to the store
+ *  - RuntimeErrorBoundary captures all runtime errors
  *
  * @module main
  */
@@ -36,12 +41,17 @@ import { toastManager }   from './ui/controls/toast.js';
 import { planningEngine } from './ai/planningEngine.js';
 import { aiAdapter, OpenAIProvider } from './ai/adapter/aiAdapter.js';
 import { AppRuntime }     from './app/runtime/appRuntime.js';
+import { previewMode }    from './preview/previewMode.js';
+import { publishPipeline } from './publish/publishPipeline.js';
+import { outputTargets }  from './output/outputTargets.js';
+import { runtimeErrorBoundary } from './preview/runtimeErrorBoundary.js';
+import { RenderTarget }   from './renderer/renderTarget.js';
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 async function boot() {
   // ── Step 1: Install global error handlers ──────────────────────────────────
   errorBoundary.installGlobalHandlers();
-  logger.info('main', 'Nuvra booting (Phase 3)…');
+  logger.info('main', 'Nuvra booting (Phase 4)…');
 
   // ── Step 2: Initialize the Core Runtime ────────────────────────────────────
   runtime.init();
@@ -88,6 +98,7 @@ async function boot() {
 
   // ── Step 7: Wire auto-save ─────────────────────────────────────────────────
   store.subscribe((newState) => {
+    // Do not persist preview or publish transient state
     storageEngine.scheduleSave(newState);
   });
 
@@ -114,7 +125,6 @@ async function boot() {
   }
 
   // ── Step 10: Wire App Runtime activation ───────────────────────────────────
-  // When the editor activates an App page, boot the AppRuntime for that page.
   eventBus.on('app:runtime:boot', async ({ appSchema, mountEl, mode }) => {
     if (!appSchema || !mountEl) {
       logger.warn('main', 'app:runtime:boot received without appSchema or mountEl');
@@ -124,21 +134,16 @@ async function boot() {
       const appRuntime = new AppRuntime({ appSchema, mountEl, mode: mode || 'preview' });
       await appRuntime.boot();
       logger.info('main', `AppRuntime booted for app "${appSchema.name}" in ${mode || 'preview'} mode`);
-
-      // Store the runtime reference on the mount element for teardown
       mountEl._nuvraAppRuntime = appRuntime;
-
       eventBus.emit('app:runtime:ready', { appId: appSchema.id });
     } catch (err) {
-      errorBoundary.capture(err, {
-        module:   'appRuntime',
-        context:  'boot',
-        severity: ErrorSeverity.HIGH,
+      runtimeErrorBoundary.capture(err, {
+        module:     'appRuntime',
+        errorClass: 'render_failed',
       });
     }
   });
 
-  // Teardown when the editor navigates away from an App page
   eventBus.on('app:runtime:teardown', ({ mountEl }) => {
     if (mountEl?._nuvraAppRuntime) {
       mountEl._nuvraAppRuntime.teardown();
@@ -147,10 +152,81 @@ async function boot() {
     }
   });
 
-  // ── Step 11: Mark as booted ────────────────────────────────────────────────
+  // ── Step 11: Wire Preview Mode ─────────────────────────────────────────────
+  eventBus.on('editor:enter_preview', async ({ appSchema, mountEl, debug }) => {
+    if (!appSchema || !mountEl) {
+      logger.warn('main', 'editor:enter_preview received without appSchema or mountEl');
+      return;
+    }
+
+    store.dispatch({ type: 'PREVIEW/SET_STATE', payload: 'loading' });
+
+    const result = await previewMode.enter({ appSchema, mountEl, debug: debug || false });
+
+    if (!result.ok) {
+      runtimeErrorBoundary.capture(new Error(result.error), {
+        module:     'previewMode',
+        errorClass: 'render_failed',
+      });
+      toastManager.show('Preview failed: ' + result.error, 'error', 5000);
+    } else {
+      toastManager.show('Preview ready', 'success', 2000);
+    }
+  });
+
+  eventBus.on('editor:exit_preview', () => {
+    previewMode.exit();
+    store.dispatch({ type: 'EDITOR/SET_MODE', payload: 'edit' });
+    logger.info('main', 'Exited preview mode');
+  });
+
+  // ── Step 12: Wire Publish Pipeline ─────────────────────────────────────────
+  eventBus.on('publish:run', async ({ appSchema, target, config }) => {
+    if (!appSchema) {
+      logger.warn('main', 'publish:run received without appSchema');
+      return;
+    }
+
+    const resolvedTarget = target || RenderTarget.STATIC_SITE;
+
+    store.dispatch({ type: 'PUBLISH/SET_STAGE', payload: 'validate' });
+
+    const result = await publishPipeline.run({
+      appSchema,
+      target:    resolvedTarget,
+      config:    config || {},
+    });
+
+    if (!result.ok) {
+      runtimeErrorBoundary.capture(new Error(result.error), {
+        module:     'publishPipeline',
+        errorClass: 'publish_error',
+      });
+      toastManager.show('Publish failed: ' + result.error, 'error', 5000);
+      return;
+    }
+
+    // Apply the output target (download ZIP, open Blob URL, etc.)
+    const outputTarget = outputTargets[resolvedTarget];
+    if (outputTarget) {
+      const output = await outputTarget.apply(result);
+
+      if (resolvedTarget === RenderTarget.STATIC_SITE || resolvedTarget === RenderTarget.APP_READY) {
+        outputTarget.download?.(output);
+        toastManager.show('Download started', 'success', 3000);
+      } else if (resolvedTarget === RenderTarget.LIVE_PREVIEW) {
+        outputTarget.openInNewTab?.(output);
+        toastManager.show('Live preview opened', 'success', 3000);
+      }
+    }
+
+    logger.info('main', `Publish complete: "${appSchema.name}" → ${resolvedTarget}`);
+  });
+
+  // ── Step 13: Mark as booted ────────────────────────────────────────────────
   store.dispatch({ type: 'FLAGS/SET_BOOTED' });
   eventBus.emit('app:booted', { ts: Date.now() });
-  logger.info('main', 'Nuvra booted successfully (Phase 3)');
+  logger.info('main', 'Nuvra booted successfully (Phase 4)');
 }
 
 // ─── Entry Point ──────────────────────────────────────────────────────────────
