@@ -1,25 +1,11 @@
 /**
- * editorShell.js — Nuvra Foundation (Phase 0–1)
+ * editorShell.js — Nuvra Phase 2–2.5
  *
  * The Live Editor Shell.
  *
- * This module owns the editor UI. It is a runtime module registered
- * with CoreRuntime. It renders and updates the UI in response to
- * state changes — never by direct DOM manipulation from other modules.
- *
- * Principles:
- *  - All UI state comes from the store (via selectors)
- *  - All user interactions dispatch actions to the store
- *  - The shell re-renders only the parts of the UI that changed
- *  - No static HTML pretending to be interactive
- *  - No page reloads, no DOM hacks
- *
- * Architecture:
- *  - editorShell.js    — top-level shell, mounts panels
- *  - panels/toolbar.js — page selector, device mode, zoom controls
- *  - panels/sidebar.js — block/style/layer panels
- *  - panels/canvas.js  — the editable canvas area
- *  - controls/*.js     — reusable UI controls (button, select, modal, toast)
+ * Extended in Phase 2–2.5 to include the Planning Panel.
+ * The sidebar now has a 'planning' panel mode that shows the
+ * Explainability & Introspection UI.
  *
  * @module ui/editorShell
  */
@@ -39,23 +25,24 @@ import {
   selectIsBooted,
   selectNotifications,
 } from '../state/selectors.js';
-import { pageManager }   from '../pages/pageManager.js';
-import { toolbar }       from './panels/toolbar.js';
-import { sidebar }       from './panels/sidebar.js';
-import { canvas }        from './panels/canvas.js';
-import { toastManager }  from './controls/toast.js';
+import { pageManager }    from '../pages/pageManager.js';
+import { toolbar }        from './panels/toolbar.js';
+import { sidebar }        from './panels/sidebar.js';
+import { canvas }         from './panels/canvas.js';
+import { toastManager }   from './controls/toast.js';
+import { planningPanel }  from './panels/planningPanel.js';
 
 // ─── EditorShell Module ───────────────────────────────────────────────────────
 export const editorShell = {
   id:   'editorShell',
-  deps: ['pageManager'],
+  deps: ['pageManager', 'planningEngine'],
 
-  _rootEl:     null,
+  _rootEl:      null,
   _unsubscribe: null,
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
   init(runtime) {
-    logger.info('editorShell', 'Initializing editor shell');
+    logger.info('editorShell', 'Initializing editor shell (Phase 2–2.5)');
   },
 
   start(runtime) {
@@ -79,6 +66,7 @@ export const editorShell = {
     sidebar.mount(document.getElementById('nv-sidebar'));
     canvas.mount(document.getElementById('nv-canvas'));
     toastManager.mount(document.getElementById('nv-toasts'));
+    planningPanel.mount(document.getElementById('nv-planning-panel'));
 
     // Subscribe to store — update UI on state changes
     this._unsubscribe = store.subscribe((newState, prevState) => {
@@ -90,6 +78,16 @@ export const editorShell = {
       if (entry.level >= 3 /* ERROR */) {
         toastManager.show(entry.message, 'error');
       }
+    });
+
+    // Show toast on planning progress
+    eventBus.on('ai:progress', ({ stage, message }) => {
+      toastManager.show(message, 'info', 3000);
+    });
+
+    // Show toast on planning complete
+    eventBus.on('ai:pipeline_complete', ({ siteId }) => {
+      toastManager.show('Plan ready — review in the Planning panel', 'success', 4000);
     });
 
     // Initial render
@@ -104,6 +102,7 @@ export const editorShell = {
     sidebar.unmount();
     canvas.unmount();
     toastManager.unmount();
+    planningPanel.unmount();
     if (this._rootEl) this._rootEl.innerHTML = '';
   },
 
@@ -112,8 +111,9 @@ export const editorShell = {
     this._rootEl.innerHTML = `
       <div id="nv-toolbar"  class="nv-toolbar"></div>
       <div id="nv-body"     class="nv-body">
-        <div id="nv-sidebar" class="nv-sidebar"></div>
-        <div id="nv-canvas"  class="nv-canvas"></div>
+        <div id="nv-sidebar"         class="nv-sidebar"></div>
+        <div id="nv-canvas"          class="nv-canvas"></div>
+        <div id="nv-planning-panel"  class="nv-planning-panel-container nv-panel-hidden"></div>
       </div>
       <div id="nv-toasts"   class="nv-toasts"></div>
     `;
@@ -125,6 +125,7 @@ export const editorShell = {
       toolbar.render(state);
       sidebar.render(state);
       canvas.render(state);
+      this._renderPlanningPanel(state);
     } catch (err) {
       errorBoundary.capture(err, {
         module:   'editorShell',
@@ -134,14 +135,23 @@ export const editorShell = {
     }
   },
 
+  _renderPlanningPanel(state) {
+    const panelEl = document.getElementById('nv-planning-panel');
+    if (!panelEl) return;
+    const isOpen = state.ui?.panels?.['planning'] || false;
+    panelEl.classList.toggle('nv-panel-hidden', !isOpen);
+    if (isOpen) planningPanel.render();
+  },
+
   _onStateChange(newState, prevState) {
-    // Only re-render panels whose relevant state has changed
     const activeChanged   = newState.editor.activePageId !== prevState.editor.activePageId;
     const pagesChanged    = newState.pages !== prevState.pages;
     const deviceChanged   = newState.editor.deviceMode !== prevState.editor.deviceMode;
     const sidebarChanged  = newState.editor.sidebarPanel !== prevState.editor.sidebarPanel;
     const dirtyChanged    = newState.editor.isDirty !== prevState.editor.isDirty;
     const notifChanged    = newState.ui.notifications !== prevState.ui.notifications;
+    const panelChanged    = newState.ui.panels !== prevState.ui.panels;
+    const aiChanged       = newState.ai !== prevState.ai;
 
     if (activeChanged || pagesChanged || deviceChanged || dirtyChanged) {
       toolbar.render(newState);
@@ -154,6 +164,9 @@ export const editorShell = {
     }
     if (notifChanged) {
       toastManager.syncFromState(newState);
+    }
+    if (panelChanged || aiChanged) {
+      this._renderPlanningPanel(newState);
     }
   },
 };

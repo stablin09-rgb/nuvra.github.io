@@ -173,6 +173,37 @@ export function flagsReducer(state = FLAGS_INITIAL, action) {
   }
 }
 
+// ─── AI Reducer ──────────────────────────────────────────────────────────────
+const AI_INITIAL = {
+  isPlanning:    false,
+  planningStage: null,   // { stage: string, message: string }
+  intent:        null,   // current IntentSchema
+  siteSchema:    null,   // current SiteSchema
+  decisions:     [],     // planning decisions log
+  schemaStore:   null,   // serialized SchemaStore (for persistence)
+};
+
+export function aiReducer(state = AI_INITIAL, action) {
+  switch (action.type) {
+    case 'AI/SET_PLANNING':
+      return { ...state, isPlanning: action.payload };
+    case 'AI/SET_PLANNING_STAGE':
+      return { ...state, planningStage: action.payload };
+    case 'AI/SET_INTENT':
+      return { ...state, intent: action.payload };
+    case 'AI/CLEAR_INTENT':
+      return { ...state, intent: null, siteSchema: null, decisions: [] };
+    case 'AI/SET_SITE_SCHEMA':
+      return { ...state, siteSchema: action.payload };
+    case 'AI/SET_DECISIONS':
+      return { ...state, decisions: action.payload };
+    case 'AI/SET_SCHEMA_STORE':
+      return { ...state, schemaStore: action.payload };
+    default:
+      return state;
+  }
+}
+
 // ─── Root Reducer ─────────────────────────────────────────────────────────────
 /**
  * Combines all slice reducers into a single root reducer.
@@ -186,6 +217,7 @@ export function rootReducer(state = {}, action) {
     pages:  pagesReducer(state.pages,  action),
     ui:     uiReducer(state.ui,     action),
     flags:  flagsReducer(state.flags,  action),
+    ai:     aiReducer(state.ai,     action),
   };
 }
 

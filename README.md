@@ -1,42 +1,60 @@
-# Nuvra Foundation — Phase 0–1
+# Nuvra — Phase 2–2.5: AI Planning Engine
+
+> **Includes Phase 0–1 Foundation + Phase 2–2.5 AI Planning Engine**
+
+---
 
 This directory contains the complete source code for the Nuvra Foundation, a hard reset of the application built from first principles. It provides a deterministic, observable, and extensible core for all future development.
 
 ## Core Objective
 
-The goal of this phase was to produce a non-static, fully functioning, deterministic core that can support all future phases without rework. The foundation is built on principles of determinism, runtime execution, a single source of truth, explicit lifecycles, zero silent failures, observable systems, and strict module boundaries.
+Phase 2–2.5 introduces the **AI Planning Engine** — a schema-first, deterministic system that translates natural language user intent into a structured, explainable site plan. It builds on the Phase 0–1 foundation without modifying its core principles.
+
+**Phase 0–1 Foundation**: Deterministic Core Runtime, Single State Authority, local-first Persistence, dynamic Page System, Error Boundary, and state-driven Live Editor Shell.
+
+**Phase 2–2.5 AI Planning Engine**: Intent Analysis, Planning Graph with UX heuristics, canonical schemas (SiteSchema, PageSchema, SectionSchema, ContentIntentSchema), AI Adapter, Schema Validator, versioned Schema Store, Explainability & Introspection UI, and full Re-planning support.
 
 ## How to Run
 
-This is a vanilla JavaScript project with no build dependencies. You can run it by serving the `nuvra-foundation` directory with any local web server.
+This is a vanilla JavaScript project with no build dependencies.
 
-1.  **Navigate to the project directory:**
-    ```sh
-    cd nuvra-foundation
+1.  **Set your OpenAI API key** (required for AI planning):
+    In your browser console, before the page loads:
+    ```javascript
+    window.NUVRA_OPENAI_KEY = 'sk-your-key-here';
     ```
 
-2.  **Start a simple web server (e.g., using Python):**
+2.  **Start a local web server:**
     ```sh
     python3 -m http.server 8000
     ```
 
 3.  **Open your browser** and navigate to `http://localhost:8000`.
 
+4.  **Use the Planning Panel**: Click the AI icon in the sidebar to open the Planning Panel. Enter a prompt and click "Analyze & Plan".
+
 ## Project Structure
 
-The codebase is organized into cleanly separated systems:
+**Phase 0–1 Foundation:**
+-   `/src/runtime`: Core Runtime, Event Bus, Lifecycle Manager.
+-   `/src/state`: Single State Authority (Store, Reducers, Selectors).
+-   `/src/persistence`: Local-first Persistence Layer with versioning.
+-   `/src/pages`: Dynamic Page System.
+-   `/src/diagnostics`: Error Boundary and structured Logger.
+-   `/src/ui`: State-driven Live Editor Shell and components.
 
--   `/src/runtime`: The Core Runtime, Event Bus, and Lifecycle Manager.
--   `/src/state`: The single State Authority (Store, Reducers, Selectors).
--   `/src/persistence`: The local-first Persistence Layer with versioning.
--   `/src/pages`: The dynamic Page System.
--   `/src/diagnostics`: The Error Boundary and structured Logger.
--   `/src/ui`: The state-driven Live Editor Shell and its components.
--   `/src/main.js`: The application boot sequence.
--   `/index.html`: The single HTML entry point.
--   `/tests`: Standalone unit tests for the foundation modules.
+**Phase 2–2.5 AI Planning Engine:**
+-   `/src/ai/planningEngine.js`: Top-level orchestrator.
+-   `/src/ai/intent/`: Intent Analysis Engine and `IntentSchema` types.
+-   `/src/ai/planning/`: Planning Graph and UX heuristics.
+-   `/src/ai/schemas/`: Canonical schema factories and the Schema Store.
+-   `/src/ai/adapter/`: AI provider adapter (OpenAI-compatible).
+-   `/src/ai/validator/`: Schema validator for all AI output.
+-   `/src/ui/panels/planningPanel.js`: Explainability & Introspection UI.
 
-For a detailed explanation of the architecture, please see `ARCHITECTURE_PHASE_0_1.md`.
+**Documentation:**
+-   `ARCHITECTURE_PHASE_0_1.md`: Foundation architecture.
+-   `ARCHITECTURE_PHASE_2_2_5.md`: AI Planning Engine architecture.
 
 ## Validation & Testing
 
@@ -50,11 +68,7 @@ All tests should pass, confirming the integrity and correctness of the core syst
 
 ## Known Limitations
 
-This is a foundational phase. As such, many features are explicitly out of scope:
-
--   **No GrapesJS**: The canvas is a placeholder. The GrapesJS editor will be integrated in a future phase.
--   **No AI**: AI providers, prompt generation, and AI-driven features are not included.
--   **No Cloud**: There is no authentication, cloud storage, or deployment. Persistence is local-only.
--   **No Marketplace**: The extension and marketplace systems are not part of the foundation.
-
-This phase delivers only the core, upon which all other features will be built.
+-   **No GrapesJS**: The canvas is a placeholder. GrapesJS integration is a future phase.
+-   **No Content Generation**: The Planning Engine generates a *plan* (schemas), not actual copy or content. Content generation is a future phase.
+-   **No Cloud**: Persistence is local-only. Cloud auth and sync are future phases.
+-   **No Marketplace**: Extension and marketplace systems are not included.

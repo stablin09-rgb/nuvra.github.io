@@ -1,0 +1,273 @@
+{
+  "_comment": "Example output from the Nuvra AI Planning Engine for a SaaS product.",
+  "_prompt": "A landing page for a project management SaaS called 'Flow' targeting remote engineering teams. Needs pricing, testimonials, a free trial CTA, and integrations section. Professional but approachable tone.",
+
+  "intentSchema": {
+    "id": "intent_example_001",
+    "version": 1,
+    "rawPrompt": "A landing page for a project management SaaS called 'Flow' targeting remote engineering teams. Needs pricing, testimonials, a free trial CTA, and integrations section. Professional but approachable tone.",
+    "product": {
+      "type": "saas",
+      "domain": "project management",
+      "subDomain": "B2B SaaS for engineering teams"
+    },
+    "audience": {
+      "primary": "Engineering managers and team leads at remote-first companies",
+      "secondary": ["Individual software engineers", "CTOs at startups"],
+      "painPoints": ["Fragmented tooling", "Lack of visibility across distributed teams", "Context switching between tools"],
+      "goals": ["Streamline project tracking", "Improve team coordination", "Reduce meeting overhead"]
+    },
+    "brand": {
+      "name": "Flow",
+      "tone": ["professional", "approachable", "modern"],
+      "personality": ["efficient", "trustworthy", "developer-friendly"],
+      "avoid": ["overly corporate", "jargon-heavy", "aggressive sales language"]
+    },
+    "goals": {
+      "primary": "free trial signup",
+      "secondary": ["demo booking", "brand awareness"],
+      "kpis": ["trial conversion rate", "demo requests per month"]
+    },
+    "features": {
+      "required": ["pricing section", "testimonials", "free trial CTA", "integrations section"],
+      "implied": ["feature overview", "how it works", "FAQ"],
+      "excluded": []
+    },
+    "content": {
+      "sections": ["hero", "social_proof", "features", "how_it_works", "integrations", "testimonials", "pricing", "faq", "cta"],
+      "mustHave": ["free trial CTA", "pricing plans", "integration logos"],
+      "mustAvoid": []
+    },
+    "constraints": {
+      "pages": 1,
+      "complexity": "moderate",
+      "timeline": null
+    },
+    "confidence": 0.92,
+    "ambiguities": [
+      {
+        "field": "constraints.pages",
+        "description": "User said 'landing page' which implies a single page, but a full SaaS site typically has multiple pages.",
+        "suggestion": "Clarify: is this a single-page marketing site or a multi-page site with About, Blog, etc.?"
+      }
+    ],
+    "assumptions": [
+      {
+        "field": "product.subDomain",
+        "value": "B2B SaaS for engineering teams",
+        "reason": "The mention of 'remote engineering teams' and 'project management' strongly implies a B2B SaaS context."
+      },
+      {
+        "field": "constraints.pages",
+        "value": "1",
+        "reason": "User specified 'landing page', interpreted as a single-page marketing site."
+      }
+    ]
+  },
+
+  "siteSchema": {
+    "id": "site_example_001",
+    "version": 1,
+    "intentId": "intent_example_001",
+    "identity": {
+      "name": "Flow",
+      "domain": "project management",
+      "productType": "saas",
+      "primaryGoal": "free trial signup"
+    },
+    "pages": [
+      {
+        "id": "page_example_home",
+        "name": "Home",
+        "slug": "home",
+        "template": "saas",
+        "purpose": "Primary entry point — establishes value and drives free trial signups.",
+        "reason": "Every site requires a home page as the primary entry point and conversion surface.",
+        "sections": [
+          {
+            "id": "sec_nav",
+            "type": "navigation",
+            "purpose": "Provide orientation and primary navigation with a prominent free trial CTA.",
+            "reason": "Navigation with clear product name and primary CTA is essential for SaaS credibility.",
+            "priority": 10,
+            "contentIntent": {
+              "sectionType": "navigation",
+              "headline": "Communicate the Flow brand name clearly",
+              "body": "Provide links to Features, Pricing, and Integrations sections",
+              "cta": "Start free trial",
+              "tone": "professional",
+              "mustInclude": ["logo", "navLinks", "cta"],
+              "mustAvoid": ["cluttered navigation", "more than 5 nav items"]
+            }
+          },
+          {
+            "id": "sec_hero",
+            "type": "hero",
+            "purpose": "Communicate the core job-to-be-done for remote engineering teams in one sentence.",
+            "reason": "Hero appears first to establish value clarity within 3 seconds — the critical window before a user decides to leave.",
+            "priority": 10,
+            "contentIntent": {
+              "sectionType": "hero",
+              "headline": "Communicate that Flow eliminates the coordination overhead that slows remote engineering teams",
+              "body": "Expand on the headline with a specific, concrete benefit — not a feature list",
+              "cta": "Start free trial",
+              "tone": "professional and approachable",
+              "mustInclude": ["headline", "subheadline", "primaryCta"],
+              "mustAvoid": ["vague language like 'the best tool'", "feature lists in the hero"]
+            }
+          },
+          {
+            "id": "sec_social_proof",
+            "type": "social_proof",
+            "purpose": "Reduce skepticism immediately after the hero with recognizable company logos or a key metric.",
+            "reason": "Quantified results immediately after the hero establish credibility for a SaaS product.",
+            "priority": 9,
+            "contentIntent": {
+              "sectionType": "social_proof",
+              "headline": null,
+              "body": "Show logos of 4-6 recognizable companies using Flow, or a single compelling metric (e.g., '10,000+ engineering teams')",
+              "cta": null,
+              "tone": "neutral",
+              "mustInclude": ["proofItems"],
+              "mustAvoid": ["fake or generic logos", "unverifiable claims"]
+            }
+          },
+          {
+            "id": "sec_features",
+            "type": "features",
+            "purpose": "Detail the specific capabilities that matter most to remote engineering teams.",
+            "reason": "Feature overview gives technical evaluators the information they need.",
+            "priority": 8,
+            "contentIntent": {
+              "sectionType": "features",
+              "headline": "Communicate that Flow is purpose-built for how engineering teams actually work",
+              "body": "Highlight 3-4 features that directly address the pain points of remote engineering teams: visibility, async communication, and integration with developer tools",
+              "cta": null,
+              "tone": "professional",
+              "mustInclude": ["headline", "featureList"],
+              "mustAvoid": ["more than 6 features", "generic feature names like 'collaboration'"]
+            }
+          },
+          {
+            "id": "sec_how_it_works",
+            "type": "how_it_works",
+            "purpose": "Reduce perceived onboarding effort by showing the path from signup to first value.",
+            "reason": "SaaS products require onboarding clarity — users need to understand the workflow before committing.",
+            "priority": 7,
+            "contentIntent": {
+              "sectionType": "how_it_works",
+              "headline": "Communicate that getting started with Flow is fast and does not require a long setup",
+              "body": "Show 3 steps: connect your tools, invite your team, start tracking. Each step should take less than 2 minutes.",
+              "cta": "See it in action",
+              "tone": "approachable",
+              "mustInclude": ["headline", "steps"],
+              "mustAvoid": ["more than 4 steps", "technical jargon in step descriptions"]
+            }
+          },
+          {
+            "id": "sec_integrations",
+            "type": "integrations",
+            "purpose": "Signal ecosystem maturity and reduce switching cost concerns for engineering teams.",
+            "reason": "Integration ecosystem signals maturity and reduces switching cost concerns — explicitly requested by the user.",
+            "priority": 7,
+            "contentIntent": {
+              "sectionType": "integrations",
+              "headline": "Communicate that Flow works with the tools engineering teams already use",
+              "body": "Show logos of key integrations: GitHub, Jira, Slack, Linear, Figma, etc.",
+              "cta": "See all integrations",
+              "tone": "professional",
+              "mustInclude": ["headline", "integrationLogos"],
+              "mustAvoid": ["listing integrations without logos"]
+            }
+          },
+          {
+            "id": "sec_testimonials",
+            "type": "testimonials",
+            "purpose": "Build trust through specific, credible stories from engineering managers at recognizable companies.",
+            "reason": "Customer stories from recognizable companies provide social proof for B2B buyers — explicitly requested by the user.",
+            "priority": 8,
+            "contentIntent": {
+              "sectionType": "testimonials",
+              "headline": "Communicate that real engineering teams have achieved measurable results with Flow",
+              "body": "Show 2-3 testimonials from engineering managers. Each should include a specific, quantified outcome (e.g., '40% fewer status meetings').",
+              "cta": null,
+              "tone": "authentic",
+              "mustInclude": ["testimonials"],
+              "mustAvoid": ["generic praise without specifics", "anonymous testimonials"]
+            }
+          },
+          {
+            "id": "sec_pricing",
+            "type": "pricing",
+            "purpose": "Present pricing transparently to remove the #1 objection for B2B SaaS buyers.",
+            "reason": "Transparent pricing is a trust signal for SaaS — hiding it creates friction. Explicitly requested by the user.",
+            "priority": 9,
+            "contentIntent": {
+              "sectionType": "pricing",
+              "headline": "Communicate that Flow has a plan for every team size, with a free trial available",
+              "body": "Show 3 plans: Free (up to 5 users), Pro (per seat), Enterprise (custom). Highlight the Pro plan as recommended.",
+              "cta": "Start free trial",
+              "tone": "transparent",
+              "mustInclude": ["headline", "plans"],
+              "mustAvoid": ["hiding the price behind 'contact us'", "more than 4 pricing tiers"]
+            }
+          },
+          {
+            "id": "sec_faq",
+            "type": "faq",
+            "purpose": "Address the most common objections and questions that block B2B engineering teams from starting a trial.",
+            "reason": "FAQ addresses technical and contractual questions that block B2B decisions.",
+            "priority": 6,
+            "contentIntent": {
+              "sectionType": "faq",
+              "headline": "Address the questions engineering managers ask before starting a trial",
+              "body": "Cover: data security and compliance, migration from existing tools, team onboarding time, and support options.",
+              "cta": null,
+              "tone": "direct",
+              "mustInclude": ["headline", "questions"],
+              "mustAvoid": ["vague answers", "more than 8 questions"]
+            }
+          },
+          {
+            "id": "sec_cta",
+            "type": "cta",
+            "purpose": "Create a clear, low-friction path to starting a free trial for users who have read the full page.",
+            "reason": "Closing CTA captures high-intent users who have read through the full page.",
+            "priority": 10,
+            "contentIntent": {
+              "sectionType": "cta",
+              "headline": "Communicate that starting a free trial is risk-free and takes less than 2 minutes",
+              "body": "Reinforce the free trial offer with a guarantee (no credit card required, cancel anytime).",
+              "cta": "Start your free trial",
+              "tone": "confident and approachable",
+              "mustInclude": ["headline", "primaryCta"],
+              "mustAvoid": ["aggressive language", "countdown timers or false urgency"]
+            }
+          },
+          {
+            "id": "sec_footer",
+            "type": "footer",
+            "purpose": "Provide navigation fallback, legal information, and trust signals.",
+            "reason": "Footer with security badges and compliance links is critical for B2B trust.",
+            "priority": 4,
+            "contentIntent": {
+              "sectionType": "footer",
+              "headline": null,
+              "body": "Include links to Privacy Policy, Terms of Service, and Security page. Add SOC 2 and GDPR compliance badges.",
+              "cta": null,
+              "tone": "neutral",
+              "mustInclude": ["copyright", "links"],
+              "mustAvoid": []
+            }
+          }
+        ]
+      }
+    ],
+    "meta": {
+      "pageCount": 1,
+      "sectionCount": 11,
+      "plannedAt": 1740830400000,
+      "planVersion": 1
+    }
+  }
+}
