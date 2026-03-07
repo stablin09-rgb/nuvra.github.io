@@ -359,6 +359,104 @@ export function aiGenerationReducer(state = AI_GEN_INITIAL, action) {
   }
 }
 
+// ─── Auth Reducer (Phase 6) ──────────────────────────────────────────────────
+const AUTH_INITIAL = {
+  userId:          null,
+  email:           null,
+  displayName:     null,
+  avatarUrl:       null,
+  isAuthenticated: false,
+  isLoading:       false,
+  error:           null,
+  provider:        null,
+};
+
+export function authReducer(state = AUTH_INITIAL, action) {
+  switch (action.type) {
+    case 'AUTH/SET_USER':
+      return { ...state, ...action.payload, isAuthenticated: true, isLoading: false, error: null };
+    case 'AUTH/CLEAR_USER':
+      return { ...AUTH_INITIAL };
+    case 'AUTH/SET_LOADING':
+      return { ...state, isLoading: action.payload };
+    case 'AUTH/SET_ERROR':
+      return { ...state, error: action.payload, isLoading: false };
+    default:
+      return state;
+  }
+}
+
+// ─── Cloud Reducer (Phase 6) ──────────────────────────────────────────────────
+const CLOUD_INITIAL = {
+  isOnline:         true,
+  isSyncing:        false,
+  lastSyncedAt:     null,
+  syncError:        null,
+  conflicts:        [],
+  offlineQueueSize: 0,
+  projects:         [],
+  activeProjectId:  null,
+};
+
+export function cloudReducer(state = CLOUD_INITIAL, action) {
+  switch (action.type) {
+    case 'CLOUD/SET_SYNCING':
+      return { ...state, isSyncing: action.payload };
+    case 'CLOUD/SET_LAST_SYNCED':
+      return { ...state, lastSyncedAt: action.payload, isSyncing: false, syncError: null };
+    case 'CLOUD/SET_SYNC_ERROR':
+      return { ...state, syncError: action.payload, isSyncing: false };
+    case 'CLOUD/SET_CONFLICTS':
+      return { ...state, conflicts: action.payload };
+    case 'CLOUD/RESOLVE_CONFLICT':
+      return { ...state, conflicts: state.conflicts.filter(c => c.id !== action.payload) };
+    case 'CLOUD/SET_OFFLINE_QUEUE_SIZE':
+      return { ...state, offlineQueueSize: action.payload };
+    case 'CLOUD/SET_PROJECTS':
+      return { ...state, projects: action.payload };
+    case 'CLOUD/SET_ACTIVE_PROJECT':
+      return { ...state, activeProjectId: action.payload };
+    case 'PROJECTS/CLEAR':
+      return { ...state, projects: [], activeProjectId: null };
+    default:
+      return state;
+  }
+}
+
+// ─── Governance Reducer (Phase 6) ─────────────────────────────────────────────
+const GOVERNANCE_INITIAL = {
+  pendingApprovals:  [],
+  pendingApprovalId: null,
+  auditLogCount:     0,
+  lastAuditEvent:    null,
+};
+
+export function governanceReducer(state = GOVERNANCE_INITIAL, action) {
+  switch (action.type) {
+    case 'AI_APPROVAL_REQUIRED':
+      return {
+        ...state,
+        pendingApprovals:  [...state.pendingApprovals, action.payload.approvalId],
+        pendingApprovalId: action.payload.approvalId,
+      };
+    case 'AI_APPROVED':
+    case 'AI_REJECTED':
+      return {
+        ...state,
+        pendingApprovals:  state.pendingApprovals.filter(id => id !== action.payload.approvalId),
+        pendingApprovalId: null,
+      };
+    case 'AI/SET_PENDING_APPROVAL':
+      return { ...state, pendingApprovalId: action.payload.approvalId };
+    case 'AI/CLEAR_PENDING_APPROVAL':
+      return { ...state, pendingApprovalId: null };
+    case 'GOVERNANCE/INCREMENT_AUDIT_COUNT':
+      return { ...state, auditLogCount: state.auditLogCount + 1, lastAuditEvent: action.payload };
+    default:
+      return state;
+  }
+}
+
 // ─── Root Reducer ─────────────────────────────────────────────────────────────
 /**
  * Combines all slice reducers into a single root reducer.
@@ -378,6 +476,10 @@ export function rootReducer(state = {}, action) {
     preview:       previewReducer(state.preview,            action),
     publish:       publishReducer(state.publish,            action),
     runtimeErrors: runtimeErrorsReducer(state.runtimeErrors, action),
+    // Phase 6
+    auth:          authReducer(state.auth,                  action),
+    cloud:         cloudReducer(state.cloud,                action),
+    governance:    governanceReducer(state.governance,      action),
   };
 }
 
