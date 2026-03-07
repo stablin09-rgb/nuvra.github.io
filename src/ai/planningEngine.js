@@ -27,15 +27,21 @@ import { intentAnalyzer } from './intent/intentAnalyzer.js';
 import { planningGraph }  from './planning/planningGraph.js';
 import { schemaStore }    from './schemas/schemaStore.js';
 import { schemaValidator } from './validator/schemaValidator.js';
+import MobileAwarePlanner from './planning/mobileAwarePlanner.js';
 import { now }            from '../runtime/utils.js';
 
 // ─── PlanningEngine ───────────────────────────────────────────────────────────
 export const planningEngine = {
+  mobileAwarePlanner: null,
   id:   'planningEngine',
   deps: [],
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
   init(runtime) {
+    this.mobileAwarePlanner = new MobileAwarePlanner({
+      logger: logger,
+      planningGraph: planningGraph,
+    });
     // Listen for section re-plan requests from the UI
     eventBus.on('ai:replan_section_requested', ({ sectionId }) => {
       this.replanSection(sectionId).catch(err => {
@@ -108,7 +114,26 @@ export const planningEngine = {
 
       // ── Stage 3: Planning Graph ────────────────────────────────────────────
       this._emitProgress('planning', 'Building your site plan…');
-      const { siteSchema, decisions, errors: planErrors } = await planningGraph.plan(intent, { deterministic });
+      let { siteSchema, decisions, errors: planErrors } = await planningGraph.plan(intent, { deterministic });
+
+      if (planErrors.length > 0 || !siteSchema) {
+        const msg = `Planning failed: ${planErrors.join(', ')}`;
+        logger.error('planningEngine', msg);
+        store.dispatch({ type: 'AI/SET_PLANNING', payload: false });
+        return { ok: false, intentId: intent.id, siteId: null, errors: planErrors };
+      }
+
+      // ── Stage 3.5: Apply Mobile-Aware Planning (if target is mobile)
+      if (options.targetPlatform && options.targetPlatform.startsWith('mobile')) {
+        this._emitProgress('mobile_planning', 'Applying mobile-aware planning constraints');
+        siteSchema = this.mobileAwarePlanner.enhancePlanWithMobileConstraints(
+          siteSchema, intent, options.targetPlatform
+        );
+        // Update decisions with mobile-aware insights if available
+        if (siteSchema.mobileReadiness) {
+          decisions.mobileReadiness = siteSchema.mobileReadiness;
+        }
+      }
 
       if (planErrors.length > 0 || !siteSchema) {
         const msg = `Planning failed: ${planErrors.join(', ')}`;
