@@ -107,6 +107,20 @@ export const toolbar = {
         <button class="nv-btn nv-btn-primary" data-action="save" title="Save" ${!isDirty ? 'disabled' : ''}>
           Save
         </button>
+
+        <div class="nv-divider"></div>
+
+        <!-- User/Profile Menu Placeholder -->
+        <div class="nv-profile-menu">
+          <button class="nv-btn" data-action="toggle-profile-menu" title="User Profile">
+            &#128100; Profile
+          </button>
+          <div class="nv-profile-dropdown nv-panel-hidden">
+            <div class="nv-profile-item" data-action="show-billing">Billing Dashboard</div>
+            <div class="nv-profile-item" data-action="show-cloud-sync">Cloud Sync Status</div>
+            <div class="nv-profile-item" data-action="logout">Logout</div>
+          </div>
+        </div>
       </div>
     `;
   },
@@ -161,6 +175,26 @@ export const toolbar = {
         eventBus.emit('ai:generate_requested', {}); break;
       case 'toggle-planning-panel':
         store.dispatch({ type: 'UI/TOGGLE_PANEL', payload: 'planning' }); break;
+      case 'toggle-profile-menu':
+        // Toggle visibility of the dropdown
+        const dropdown = this._el.querySelector('.nv-profile-dropdown');
+        dropdown.classList.toggle('nv-panel-hidden');
+        break;
+      case 'show-billing':
+        // Handle showing billing dashboard
+        alert('Billing Dashboard clicked!');
+        // In a real app, you'd dispatch an action to show the billing dashboard UI
+        break;
+      case 'show-cloud-sync':
+        // Handle showing cloud sync status
+        alert('Cloud Sync Status clicked!');
+        // In a real app, you'd dispatch an action to show the cloud sync status UI
+        break;
+      case 'logout':
+        // Handle logout
+        alert('Logout clicked!');
+        // In a real app, you'd dispatch an action to handle user logout
+        break;
     }
   },
 

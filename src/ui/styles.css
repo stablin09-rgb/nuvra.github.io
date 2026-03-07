@@ -334,3 +334,36 @@ html, body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #484f58; }
+
+/* --- Profile Menu --- */
+.nv-profile-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.nv-profile-dropdown {
+  position: absolute;
+  background-color: var(--nv-c-bg-alt);
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  right: 0;
+  border-radius: var(--nv-border-radius);
+  overflow: hidden;
+}
+
+.nv-profile-dropdown.nv-panel-hidden {
+  display: none;
+}
+
+.nv-profile-item {
+  color: var(--nv-c-text);
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  cursor: pointer;
+}
+
+.nv-profile-item:hover {
+  background-color: var(--nv-c-primary-light);
+}
