@@ -26,7 +26,7 @@ export const marketplaceCatalog = {
   render() {
     if (!this._el) return;
     
-    const marketplaceCatalogModule = runtime.getModule('marketplaceCatalog');
+    const marketplaceCatalogModule = runtime.get('marketplaceCatalog');
     if (!marketplaceCatalogModule) {
       this._el.innerHTML = '<div class="nv-panel-placeholder">Marketplace Catalog not initialized.</div>';
       return;

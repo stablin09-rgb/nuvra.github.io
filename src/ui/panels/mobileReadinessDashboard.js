@@ -34,8 +34,8 @@ export const mobileReadinessDashboard = {
     const activePage = state.pages?.byId[state.editor?.activePageId];
     const appManifest = activePage?.content || {};
 
-    const mobilePolicyEngine = runtime.getModule('mobilePolicyEngine');
-    const mobileAwarePlanner = runtime.getModule('mobileAwarePlanner');
+    const mobilePolicyEngine = runtime.get('mobilePolicyEngine');
+    const mobileAwarePlanner = runtime.get('mobileAwarePlanner');
 
     if (!mobilePolicyEngine || !mobileAwarePlanner) {
       this._el.innerHTML = '<div class="nv-panel-placeholder">Mobile Governance modules not initialized.</div>';

@@ -492,13 +492,9 @@ async function boot() {
   _try('enterpriseBilling.wireEvents', () => enterpriseBilling?.wireEvents());
 
   // ── Step 37: Start the Editor Shell (renders the UI, clears loading screen) ─
-  const appEl = document.getElementById('nv-app');
-  if (appEl) {
-    editorShell.start(appEl);
-    logger.info('main', 'Editor shell started');
-  } else {
-    logger.error('main', 'Could not find #nv-app element — editor shell not started');
-  }
+  // editorShell.start() takes the runtime object and finds #nv-app internally
+  editorShell.start(runtime);
+  logger.info('main', 'Editor shell started');
 
   // ── Step 38: Mark as booted ────────────────────────────────────────────────
   store.dispatch({ type: 'APP/SET_BOOTED', payload: true });
