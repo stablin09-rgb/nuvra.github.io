@@ -421,9 +421,28 @@ async function boot() {
     store.dispatch({ type: "AI/SET_PLANNING", payload: true });
     store.dispatch({ type: "AI/CLEAR_INTENT" });
     try {
-      const result = await aiGenerationEngine.generate({ prompt, context, options });
+      // Phase 9: Mobile-aware planning
+      const targetPlatform = store.getState().editor?.deviceMode === 'mobile' ? 'ios' : 'web';
+      const result = await aiGenerationEngine.generate({ 
+        prompt, 
+        context, 
+        options: { ...options, targetPlatform } 
+      });
+
       if (result.ok) {
-        pageManager.setActivePage(pageManager.addPage({ name: result.intent.appName || "New App", content: result.schema }));
+        const page = pageManager.addPage({ 
+          name: result.intent.appName || "New App", 
+          content: result.schema 
+        });
+        pageManager.setActivePage(page.id);
+        
+        // Phase 9: Evaluate mobile readiness if applicable
+        if (targetPlatform !== 'web') {
+          const evaluation = mobilePolicyEngine.evaluateApp(result.schema, targetPlatform);
+          if (!evaluation.isValid) {
+            toastManager.show(`App generated with ${evaluation.errors.length} policy violations. Check Mobile Dashboard.`, "warning", 6000);
+          }
+        }
       } else {
         toastManager.show(`AI Generation failed: ${result.error}`, "error", 5000);
       }

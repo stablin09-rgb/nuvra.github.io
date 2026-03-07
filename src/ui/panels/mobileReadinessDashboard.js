@@ -5,110 +5,88 @@
  * This dashboard provides developers with a clear overview of their app's mobile
  * compatibility, policy compliance, and potential issues, along with guidance.
  */
+'use strict';
 
-const { logger } = require("../../diagnostics/logger");
-const MobilePolicyEngine = require("../../mobile/governance/mobilePolicyEngine");
-const MobileAwarePlanner = require("../../ai/planning/mobileAwarePlanner");
+import { store } from '../../state/store.js';
+import { logger } from '../../diagnostics/logger.js';
+import { runtime } from '../../runtime/lifecycle.js';
 
-class MobileReadinessDashboard {
-  /**
-   * @param {object} options
-   * @param {object} options.logger - Logger instance.
-   * @param {object} options.mobilePolicyEngine - Instance of MobilePolicyEngine.
-   * @param {object} options.mobileAwarePlanner - Instance of MobileAwarePlanner.
-   */
-  constructor({ logger, mobilePolicyEngine, mobileAwarePlanner }) {
-    this.logger = logger;
-    this.mobilePolicyEngine = mobilePolicyEngine;
-    this.mobileAwarePlanner = mobileAwarePlanner;
-    this.dashboardElement = null; // Reference to the DOM element for the dashboard
-  }
+export const mobileReadinessDashboard = {
+  _el: null,
 
-  /**
-   * Initializes and renders the mobile readiness dashboard.
-   * @param {HTMLElement} parentElement - The DOM element to attach the dashboard to.
-   * @param {object} appManifest - The current application manifest.
-   * @param {string} targetPlatform - The selected target mobile platform.
-   */
-  render(parentElement, appManifest, targetPlatform) {
-    this.dashboardElement = parentElement;
-    this.dashboardElement.innerHTML = ''; // Clear previous content
+  mount(el) {
+    if (!el) return;
+    this._el = el;
+    this.render();
+  },
 
-    this.logger.info(`Rendering Mobile Readiness Dashboard for ${targetPlatform}.`);
+  unmount() {
+    this._el = null;
+  },
 
-    const { isValid, warnings, errors } = this.mobilePolicyEngine.evaluateApp(appManifest, targetPlatform);
-    const mobileReadiness = this.mobileAwarePlanner.enhancePlanWithMobileConstraints({}, appManifest, targetPlatform).mobileReadiness;
+  render() {
+    if (!this._el) return;
+    
+    const state = store.getState();
+    const targetPlatform = state.editor?.deviceMode === 'mobile' ? 'ios' : 'web';
+    
+    // In a real scenario, we'd get the current app schema from the active page
+    const activePage = state.pages?.byId[state.editor?.activePageId];
+    const appManifest = activePage?.content || {};
 
-    const html = `
-      <div class="mobile-readiness-dashboard">
-        <h2>Mobile Readiness Dashboard - ${targetPlatform.toUpperCase()}</h2>
-        <div class="score-card">
-          <h3>Readiness Score: ${mobileReadiness.score || 'N/A'}</h3>
-          <p>${isValid ? 'Compliant' : 'Non-Compliant'}</p>
+    const mobilePolicyEngine = runtime.getModule('mobilePolicyEngine');
+    const mobileAwarePlanner = runtime.getModule('mobileAwarePlanner');
+
+    if (!mobilePolicyEngine || !mobileAwarePlanner) {
+      this._el.innerHTML = '<div class="nv-panel-placeholder">Mobile Governance modules not initialized.</div>';
+      return;
+    }
+
+    const { isValid, warnings, errors } = mobilePolicyEngine.evaluateApp(appManifest, targetPlatform);
+    const planResult = mobileAwarePlanner.enhancePlanWithMobileConstraints({}, appManifest, targetPlatform);
+    const mobileReadiness = planResult.mobileReadiness || { score: 0 };
+
+    this._el.innerHTML = `
+      <div class="mobile-readiness-dashboard" style="padding: 1rem; color: #fff;">
+        <h2 style="margin-top: 0;">Mobile Readiness - ${targetPlatform.toUpperCase()}</h2>
+        
+        <div class="score-card" style="background: #2a2a2a; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+          <h3 style="margin: 0;">Readiness Score: ${mobileReadiness.score}%</h3>
+          <p style="margin: 5px 0 0 0; color: ${isValid ? '#4caf50' : '#f44336'}">
+            Status: ${isValid ? '✅ Compliant' : '❌ Non-Compliant'}
+          </p>
+        </div>
+
+        <div class="section" style="margin-bottom: 1rem;">
+          <h3 style="border-bottom: 1px solid #444; padding-bottom: 5px;">Policy Status</h3>
+          ${errors.length > 0 ? `<div class="errors" style="color: #f44336;">${errors.map(e => `<p style="margin: 5px 0;">❌ ${e}</p>`).join('')}</div>` : ''}
+          ${warnings.length > 0 ? `<div class="warnings" style="color: #ffeb3b;">${warnings.map(w => `<p style="margin: 5px 0;">⚠️ ${w}</p>`).join('')}</div>` : ''}
+          ${errors.length === 0 && warnings.length === 0 ? '<p style="color: #4caf50;">✅ No policy issues detected.</p>' : ''}
+        </div>
+
+        <div class="section" style="margin-bottom: 1rem;">
+          <h3 style="border-bottom: 1px solid #444; padding-bottom: 5px;">AI Mobile Insights</h3>
+          <p><strong>Offline Compatibility:</strong></p>
+          <ul style="padding-left: 20px;">
+            ${Object.entries(mobileReadiness.offlineCompatibilitySummary || {}).length > 0 
+              ? Object.entries(mobileReadiness.offlineCompatibilitySummary).map(([cap, status]) => `<li>${cap}: ${status}</li>`).join('')
+              : '<li>No offline constraints identified.</li>'}
+          </ul>
         </div>
 
         <div class="section">
-          <h3>Policy Warnings & Errors</h3>
-          ${errors.length > 0 ? `<div class="errors">${errors.map(e => `<p>❌ ${e}</p>`).join('')}</div>` : ''}
-          ${warnings.length > 0 ? `<div class="warnings">${warnings.map(w => `<p>⚠️ ${w}</p>`).join('')}</div>` : ''}
-          ${errors.length === 0 && warnings.length === 0 ? '<p>✅ No policy issues detected.</p>' : ''}
-        </div>
-
-        <div class="section">
-          <h3>Capability Inspector</h3>
+          <h3 style="border-bottom: 1px solid #444; padding-bottom: 5px;">Capability Inspector</h3>
           ${appManifest.declaredCapabilities && appManifest.declaredCapabilities.length > 0
-            ? `<ul>${appManifest.declaredCapabilities.map(cap => {
-                const capability = this.mobilePolicyEngine.capabilitySystem.getCapability(cap);
-                return `<li><strong>${cap}</strong>: ${capability ? capability.purpose : 'Unknown capability'}
-                        <br><em>Platform Support:</em> ${capability ? JSON.stringify(capability.platformSupport) : 'N/A'}
-                        <br><em>Consent:</em> ${capability ? capability.consentRequirements : 'N/A'}
-                        </li>`;
+            ? `<ul style="padding-left: 20px;">${appManifest.declaredCapabilities.map(cap => {
+                const capability = mobilePolicyEngine.capabilitySystem.getCapability(cap);
+                return `<li><strong>${cap}</strong>: ${capability ? capability.purpose : 'Unknown'}</li>`;
               }).join('')}</ul>`
-            : '<p>No capabilities declared.</p>'
+            : '<p>No specific capabilities declared in current page.</p>'
           }
         </div>
-
-        <div class="section">
-          <h3>AI Mobile Planning Insights</h3>
-          <p><strong>Offline Compatibility:</strong></p>
-          <ul>
-            ${Object.entries(mobileReadiness.offlineCompatibilitySummary || {}).map(([cap, status]) => `<li>${cap}: ${status}</li>`).join('')}
-          </ul>
-          <p><strong>Capability Justifications:</strong></p>
-          <ul>
-            ${Object.entries(mobileReadiness.capabilityJustifications || {}).map(([cap, justification]) => `<li>${cap}: ${justification}</li>`).join('')}
-          </ul>
-        </div>
-
-        ${errors.length > 0 ? `
-          <div class="section">
-            <h3>Guidance & Alternatives</h3>
-            ${errors.map(e => {
-              const capabilityName = e.match(/Capability '(.*?)'/)?.[1];
-              if (capabilityName) {
-                const suggestion = this.mobilePolicyEngine.suggestAlternative(capabilityName, targetPlatform);
-                return suggestion ? `<p>💡 For ${capabilityName}: ${suggestion}</p>` : '';
-              }
-              return '';
-            }).join('')}
-            ${errors.length > 0 && errors.every(e => !e.match(/Capability '(.*?)'/)) ? '<p>Review policy errors for specific guidance.</p>' : ''}
-          </div>
-        ` : ''}
       </div>
     `;
-    this.dashboardElement.innerHTML = html;
   }
+};
 
-  /**
-   * Updates the dashboard with new data (e.g., after a change in app manifest).
-   * @param {object} appManifest - The updated application manifest.
-   * @param {string} targetPlatform - The selected target mobile platform.
-   */
-  update(appManifest, targetPlatform) {
-    if (this.dashboardElement) {
-      this.render(this.dashboardElement, appManifest, targetPlatform);
-    }
-  }
-}
-
-module.exports = MobileReadinessDashboard;
+export default mobileReadinessDashboard;

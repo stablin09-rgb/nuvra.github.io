@@ -68,9 +68,15 @@ export const editorShell = {
     sidebar.mount(document.getElementById('nv-sidebar'));
     canvas.mount(document.getElementById('nv-canvas'));
     toastManager.mount(document.getElementById('nv-toasts'));
+    
+    // Mount extra panels (Phase 2, 8, 9)
     planningPanel.mount(document.getElementById("nv-planning-panel"));
-    marketplaceCatalog.mount(document.getElementById("nv-marketplace-panel"));
-    mobileReadinessDashboard.mount(document.getElementById("nv-mobile-panel"));
+    
+    const marketplaceEl = document.getElementById("nv-marketplace-panel");
+    if (marketplaceEl) marketplaceCatalog.mount(marketplaceEl);
+    
+    const mobileEl = document.getElementById("nv-mobile-panel");
+    if (mobileEl) mobileReadinessDashboard.mount(mobileEl);
 
     // Subscribe to store — update UI on state changes
     this._unsubscribe = store.subscribe((newState, prevState) => {
@@ -133,6 +139,8 @@ export const editorShell = {
       toolbar.render(state);
       sidebar.render(state);
       canvas.render(state);
+      
+      // Render side-panels
       this._renderPlanningPanel(state);
       this._renderMarketplaceCatalog(state);
       this._renderMobileReadinessDashboard(state);
