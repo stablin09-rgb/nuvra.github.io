@@ -9,7 +9,7 @@
 
 import { store } from '../../state/store.js';
 import { logger } from '../../diagnostics/logger.js';
-import { runtime } from '../../runtime/lifecycle.js';
+import { runtime } from '../../runtime/coreRuntime.js';
 
 export const mobileReadinessDashboard = {
   _el: null,

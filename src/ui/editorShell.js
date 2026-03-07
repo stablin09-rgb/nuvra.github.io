@@ -1,4 +1,4 @@
-'''/**
+/**
  * editorShell.js — Nuvra Phase 2–2.5
  *
  * The Live Editor Shell.
