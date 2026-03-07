@@ -6,8 +6,8 @@
  * compliance warnings for mobile applications.
  */
 
-const MobileRuntimeContract = require(\'./mobileRuntimeContract\');
-const CapabilityDeclarationSystem = require(\'./capabilityDeclarationSystem\');
+const MobileRuntimeContract = require('./mobileRuntimeContract');
+const CapabilityDeclarationSystem = require('./capabilityDeclarationSystem');
 
 class MobilePolicyEngine {
   /**
@@ -27,10 +27,10 @@ class MobilePolicyEngine {
   }
 
   /**
-   * Evaluates a mobile app\'s declared capabilities against platform-specific policies.
+   * Evaluates a mobile app's declared capabilities against platform-specific policies.
    * @param {object} appManifest - The manifest of the mobile application.
    * @param {string[]} appManifest.declaredCapabilities - List of capabilities declared by the app.
-   * @param {string} targetPlatform - The target mobile platform (e.g., \'ios\', \'android\', \'enterprise\', \'internal\').
+   * @param {string} targetPlatform - The target mobile platform (e.g., 'ios', 'android', 'enterprise', 'internal').
    * @returns {{ isValid: boolean, warnings: string[], errors: string[] }}
    */
   evaluateApp(appManifest, targetPlatform) {
@@ -53,36 +53,36 @@ class MobilePolicyEngine {
 
       // Check platform support
       if (!capability.platformSupport[targetPlatform]) {
-        warnings.push(`Capability \'${capabilityName}\' may not be fully supported on ${targetPlatform}.`);
+        warnings.push(`Capability '${capabilityName}' may not be fully supported on ${targetPlatform}.`);
       }
 
       // Apply platform-specific rules
       const policyRules = policies[capabilityName];
       if (policyRules) {
         if (policyRules.blocked) {
-          errors.push(`Capability \'${capabilityName}\' is blocked by ${targetPlatform} policy.`);
+          errors.push(`Capability '${capabilityName}' is blocked by ${targetPlatform} policy.`);
         }
         if (policyRules.warning) {
-          warnings.push(`Policy warning for \'${capabilityName}\' on ${targetPlatform}: ${policyRules.warning}`);
+          warnings.push(`Policy warning for '${capabilityName}' on ${targetPlatform}: ${policyRules.warning}`);
         }
       }
 
       // Check against runtime contract (example: network behavior for all platforms)
-      if (capabilityName === \'network\' && this.runtimeContract.networkBehavior.offlineGuarantees && !appManifest.offlineSupport) {
+      if (capabilityName === 'network' && this.runtimeContract.networkBehavior.offlineGuarantees && !appManifest.offlineSupport) {
         warnings.push(`App declares network capability but does not guarantee offline support, which is recommended by runtime contract.`);
       }
     }
 
     // Additional checks based on overall app manifest
-    if (targetPlatform === \'ios\' && appManifest.usesInAppPurchases && !declaredCapabilities.includes(\'payments\')) {
-      errors.push(\'iOS app uses in-app purchases but does not declare \'payments\' capability.\');
+    if (targetPlatform === 'ios' && appManifest.usesInAppPurchases && !declaredCapabilities.includes('payments')) {
+      errors.push(`iOS app uses in-app purchases but does not declare 'payments' capability.`);
     }
 
     const isValid = errors.length === 0;
     if (!isValid) {
-      this.logger.error(`App evaluation failed for ${targetPlatform}: ${errors.join(\' \')}`);
+      this.logger.error(`App evaluation failed for ${targetPlatform}: ${errors.join(' ')}`);
     } else if (warnings.length > 0) {
-      this.logger.warn(`App evaluation for ${targetPlatform} has warnings: ${warnings.join(\' \')}`);
+      this.logger.warn(`App evaluation for ${targetPlatform} has warnings: ${warnings.join(' ')}`);
     } else {
       this.logger.info(`App evaluation for ${targetPlatform} passed.`);
     }
@@ -98,7 +98,7 @@ class MobilePolicyEngine {
   _getIosPolicies() {
     return {
       healthData: { blocked: false, warning: "Requires strict privacy policy and HealthKit integration." },
-      payments: { blocked: false, warning: "Must use Apple\'s in-app purchase system for digital goods." },
+      payments: { blocked: false, warning: "Must use Apple's in-app purchase system for digital goods." },
       location: { warning: "Background location usage requires strong justification." },
       // ... other iOS specific policies
     };
@@ -136,10 +136,7 @@ class MobilePolicyEngine {
    * @private
    */
   _getInternalPolicies() {
-    return {
-      // Less strict policies for internal testing
-      // For example, no blocking of any capability, only warnings.
-    };
+    return {};
   }
 
   /**
@@ -151,11 +148,11 @@ class MobilePolicyEngine {
   suggestAlternative(capabilityName, targetPlatform) {
     // This is a placeholder for a more sophisticated suggestion system.
     // In a real scenario, this would query a knowledge base of alternatives.
-    if (capabilityName === \'healthData\' && (targetPlatform === \'enterprise\' || targetPlatform === \'internal\')) {
+    if (capabilityName === 'healthData' && (targetPlatform === 'enterprise' || targetPlatform === 'internal')) {
       return "Consider using a secure internal API for health data integration instead of direct device access.";
     }
-    if (capabilityName === \'payments\' && targetPlatform === \'enterprise\') {
-      return "Integrate with the company\'s existing payment gateway or billing system.";
+    if (capabilityName === 'payments' && targetPlatform === 'enterprise') {
+      return "Integrate with the company's existing payment gateway or billing system.";
     }
     return null;
   }

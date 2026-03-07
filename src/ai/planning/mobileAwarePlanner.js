@@ -45,7 +45,7 @@ class MobileAwarePlanner {
     for (const capName of requiredCapabilities) {
       const capability = this.capabilitySystem.getCapability(capName);
       if (!capability) {
-        this.logger.warn(`Unknown capability '${capName}' identified in intent. Skipping mobile-aware planning for it.`);
+        this.logger.warn(`Unknown capability '${capName}' identified in intent. Skipping mobile-aware planning for it. Current score: ${mobileReadinessScore}`);
         mobileReadinessScore -= 10; // Penalize for unknown capabilities
         continue;
       }
@@ -53,8 +53,9 @@ class MobileAwarePlanner {
       capabilityJustifications[capName] = capability.purpose;
 
       if (!capability.platformSupport[targetPlatform]) {
-        this.logger.warn(`Capability '${capName}' is not fully supported on ${targetPlatform}. Adjusting plan.`);
+        this.logger.warn(`Capability '${capName}' is not fully supported on ${targetPlatform}. Adjusting plan. Current score: ${mobileReadinessScore}`);
         mobileReadinessScore -= 20; // Significant penalty for unsupported features
+        this.logger.debug(`Score reduced by 20 for unsupported capability '${capName}'. New score: ${mobileReadinessScore}`);
         // Suggest alternatives or modify plan to avoid this capability
         enhancedPlan = this._adjustPlanForUnsupportedCapability(enhancedPlan, capName, targetPlatform);
       }
@@ -101,6 +102,14 @@ class MobileAwarePlanner {
   _identifyRequiredCapabilities(intentSchema) {
     const capabilities = [];
     // Example: if schema contains a 'camera' field, add 'camera' capability
+    if (intentSchema.features && Array.isArray(intentSchema.features)) {
+      if (intentSchema.features.includes('healthData')) {
+        capabilities.push('healthData');
+      }
+      if (intentSchema.features.includes('payments')) {
+        capabilities.push('payments');
+      }
+    }
     if (JSON.stringify(intentSchema).includes('camera')) {
       capabilities.push('camera');
     }
