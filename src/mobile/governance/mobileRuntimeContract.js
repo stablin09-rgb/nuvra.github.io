@@ -65,4 +65,5 @@ const MobileRuntimeContract = {
   },
 };
 
-module.exports = MobileRuntimeContract;
+export { MobileRuntimeContract };
+export default MobileRuntimeContract;

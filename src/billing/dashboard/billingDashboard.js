@@ -218,4 +218,5 @@ class BillingDashboard {
   }
 }
 
-module.exports = { BillingDashboard };
+export { BillingDashboard };
+export default BillingDashboard;

@@ -281,4 +281,5 @@ class EnterpriseBilling {
   }
 }
 
-module.exports = { EnterpriseBilling };
+export { EnterpriseBilling };
+export default EnterpriseBilling;

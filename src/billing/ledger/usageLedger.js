@@ -234,4 +234,5 @@ class UsageLedger {
   }
 }
 
-module.exports = { UsageLedger };
+export { UsageLedger };
+export default UsageLedger;

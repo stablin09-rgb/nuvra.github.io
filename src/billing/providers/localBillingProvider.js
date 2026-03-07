@@ -95,4 +95,5 @@ class LocalBillingProvider extends BillingProviderContract {
   }
 }
 
-module.exports = { LocalBillingProvider };
+export { LocalBillingProvider };
+export default LocalBillingProvider;

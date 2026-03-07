@@ -98,4 +98,5 @@ class PreviewParityEnforcement {
   }
 }
 
-module.exports = PreviewParityEnforcement;
+export { PreviewParityEnforcement };
+export default PreviewParityEnforcement;

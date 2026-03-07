@@ -245,4 +245,4 @@ class LimitEnforcementEngine {
   }
 }
 
-module.exports = { LimitEnforcementEngine, EnforcementCode };
+export { LimitEnforcementEngine, EnforcementCode };

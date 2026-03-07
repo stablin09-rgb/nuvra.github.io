@@ -273,4 +273,4 @@ class UpgradeEngine {
   }
 }
 
-module.exports = { UpgradeEngine, TransitionType };
+export { UpgradeEngine, TransitionType };

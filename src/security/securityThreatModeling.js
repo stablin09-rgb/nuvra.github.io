@@ -115,4 +115,5 @@ class SecurityThreatModeling {
   }
 }
 
-module.exports = SecurityThreatModeling;
+export { SecurityThreatModeling };
+export default SecurityThreatModeling;

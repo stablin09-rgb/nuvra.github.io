@@ -203,4 +203,4 @@ function getAllDimensions() {
   return Object.values(DIMENSION_META);
 }
 
-module.exports = { Dimension, DIMENSION_META, createEntry, getDimensionMeta, getAllDimensions };
+export { Dimension, DIMENSION_META, createEntry, getDimensionMeta, getAllDimensions };

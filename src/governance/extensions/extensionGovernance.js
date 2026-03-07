@@ -350,4 +350,5 @@ class ExtensionGovernance {
   }
 }
 
-module.exports = { ExtensionGovernance, ReviewStatus, ThreatLevel };
+export { ExtensionGovernance, ReviewStatus, ThreatLevel };
+export default ExtensionGovernance;

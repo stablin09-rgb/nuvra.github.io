@@ -308,4 +308,5 @@ class RevenueEngine {
   }
 }
 
-module.exports = { RevenueEngine, PricingModel, LicenseType, REVENUE_SPLITS };
+export { RevenueEngine, PricingModel, LicenseType, REVENUE_SPLITS };
+export default RevenueEngine;

@@ -320,4 +320,4 @@ class AICostGovernance {
   }
 }
 
-module.exports = { AICostGovernance, PROVIDER_PRICING };
+export { AICostGovernance, PROVIDER_PRICING };

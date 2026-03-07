@@ -68,4 +68,5 @@ class BillingProviderRegistry {
   }
 }
 
-module.exports = { BillingProviderRegistry };
+export { BillingProviderRegistry };
+export default BillingProviderRegistry;

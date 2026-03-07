@@ -158,4 +158,5 @@ class MobilePolicyEngine {
   }
 }
 
-module.exports = MobilePolicyEngine;
+export { MobilePolicyEngine };
+export default MobilePolicyEngine;

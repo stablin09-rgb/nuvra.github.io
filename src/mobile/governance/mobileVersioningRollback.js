@@ -103,4 +103,5 @@ class MobileVersioningRollback {
   }
 }
 
-module.exports = MobileVersioningRollback;
+export { MobileVersioningRollback };
+export default MobileVersioningRollback;

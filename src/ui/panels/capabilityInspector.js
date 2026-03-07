@@ -71,4 +71,5 @@ class CapabilityInspector {
   }
 }
 
-module.exports = CapabilityInspector;
+export { CapabilityInspector };
+export default CapabilityInspector;

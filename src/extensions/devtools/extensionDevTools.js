@@ -285,4 +285,5 @@ class ExtensionDevTools {
   }
 }
 
-module.exports = { ExtensionDevTools };
+export { ExtensionDevTools };
+export default ExtensionDevTools;

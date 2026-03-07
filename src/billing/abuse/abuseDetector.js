@@ -241,4 +241,4 @@ class AbuseDetector {
   }
 }
 
-module.exports = { AbuseDetector, AbuseCode, DEFAULT_THRESHOLDS };
+export { AbuseDetector, AbuseCode, DEFAULT_THRESHOLDS };

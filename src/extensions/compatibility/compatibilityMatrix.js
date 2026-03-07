@@ -359,4 +359,5 @@ class CompatibilityMatrix {
   }
 }
 
-module.exports = { CompatibilityMatrix, API_VERSIONS, DEPRECATED_APIS, BREAKING_CHANGES };
+export { CompatibilityMatrix, API_VERSIONS, DEPRECATED_APIS, BREAKING_CHANGES };
+export default CompatibilityMatrix;

@@ -227,4 +227,5 @@ class EntitlementManager {
   }
 }
 
-module.exports = { EntitlementManager };
+export { EntitlementManager };
+export default EntitlementManager;

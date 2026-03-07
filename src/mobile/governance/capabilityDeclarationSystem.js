@@ -144,4 +144,5 @@ class CapabilityDeclarationSystem {
   }
 }
 
-module.exports = CapabilityDeclarationSystem;
+export { CapabilityDeclarationSystem };
+export default CapabilityDeclarationSystem;

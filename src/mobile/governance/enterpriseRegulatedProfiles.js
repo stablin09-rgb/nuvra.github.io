@@ -109,4 +109,5 @@ class EnterpriseRegulatedProfiles {
   }
 }
 
-module.exports = EnterpriseRegulatedProfiles;
+export { EnterpriseRegulatedProfiles };
+export default EnterpriseRegulatedProfiles;

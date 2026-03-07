@@ -289,4 +289,5 @@ class AIExtensionLayer {
   }
 }
 
-module.exports = { AIExtensionLayer };
+export { AIExtensionLayer };
+export default AIExtensionLayer;

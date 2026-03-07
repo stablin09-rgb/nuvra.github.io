@@ -129,4 +129,5 @@ class GovernedBuildPipeline {
   }
 }
 
-module.exports = GovernedBuildPipeline;
+export { GovernedBuildPipeline };
+export default GovernedBuildPipeline;

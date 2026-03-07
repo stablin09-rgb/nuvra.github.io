@@ -325,4 +325,5 @@ class MarketplaceCatalog {
   }
 }
 
-module.exports = { MarketplaceCatalog };
+export { MarketplaceCatalog };
+export default MarketplaceCatalog;
