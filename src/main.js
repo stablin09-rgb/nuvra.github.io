@@ -129,6 +129,15 @@ import { observabilityService } from './hosting/observabilityService.js';
 import { aiExtensions }         from './ai/aiExtensions.js';
 import { deployPanel }          from './ui/deployPanel.js';
 
+// ─── Phase 14: Autonomous Agent System ───────────────────────────────────────
+import { agentRuntime }     from './agents/agentRuntime.js';
+import { agentPermissions } from './agents/agentPermissions.js';
+import { agentMemory, MEMORY_CATEGORY } from './agents/agentMemory.js';
+import { goalInterpreter }  from './agents/goalInterpreter.js';
+import { planExecutor, EXECUTION_STATUS } from './agents/planExecutor.js';
+import { agentManager }     from './agents/agentManager.js';
+import { agentConsole }     from './ui/agentConsole.js';
+
 // ─── Helper ───────────────────────────────────────────────────────────────────
 function _getEnvVar(name) {
   if (typeof window !== 'undefined' && window.NUVRA_ENV_VARS?.[name]) {
@@ -607,6 +616,46 @@ async function boot() {
 
   logger.info('main', 'Phase 13 modules registered');
 
+  // ── Phase 14: Autonomous Agent System ────────────────────────────────────────
+  _try('P14 agentRuntime init', () => {
+    if (typeof agentRuntime.init === 'function') agentRuntime.init();
+  });
+  _try('P14 agentPermissions init', () => {
+    if (typeof agentPermissions.init === 'function') agentPermissions.init();
+  });
+  _try('P14 agentMemory init', () => {
+    if (typeof agentMemory.init === 'function') agentMemory.init();
+  });
+  _try('P14 goalInterpreter init', () => {
+    if (typeof goalInterpreter.init === 'function') goalInterpreter.init();
+  });
+  _try('P14 planExecutor init', () => {
+    if (typeof planExecutor.init === 'function') planExecutor.init();
+  });
+  _try('P14 agentManager init', () => {
+    if (typeof agentManager.init === 'function') agentManager.init();
+  });
+  _try('P14 agentConsole init', () => {
+    if (typeof agentConsole.init === 'function') agentConsole.init();
+    // Wire the Generate button to open the agent console
+    const generateBtn = document.querySelector('[hint="Generate with AI"]');
+    if (generateBtn && typeof agentConsole.show === 'function') {
+      generateBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        agentConsole.show();
+      });
+    }
+  });
+  _registerModule('agentRuntime', agentRuntime);
+  _registerModule('agentPermissions', agentPermissions);
+  _registerModule('agentMemory', agentMemory);
+  _registerModule('goalInterpreter', goalInterpreter);
+  _registerModule('planExecutor', planExecutor);
+  _registerModule('agentManager', agentManager);
+  _registerModule('agentConsole', agentConsole);
+
+  logger.info('main', 'Phase 14 modules registered');
+
   // ── Step 25: Start all modules ─────────────────────────────────────────────
   _try('runtime.start', () => runtime.start());
 
@@ -694,7 +743,7 @@ async function boot() {
 
   // ── Step 38: Mark as booted ────────────────────────────────────────────────
   store.dispatch({ type: 'APP/SET_BOOTED', payload: true });
-  logger.info('main', 'Nuvra booted (Phase 13).');
+  logger.info('main', 'Nuvra booted (Phase 14).');
 
   // ── Debug handles ──────────────────────────────────────────────────────────
   Object.assign(window, {
@@ -718,6 +767,10 @@ async function boot() {
     packSDK, packRuntime, packManager,
     hostingManager, deployPipeline, deployHistory, domainManager,
     observabilityService, aiExtensions, deployPanel, DEPLOY_STATUS,
+    // Phase 14
+    agentRuntime, agentPermissions, agentMemory, MEMORY_CATEGORY,
+    goalInterpreter, planExecutor, EXECUTION_STATUS,
+    agentManager, agentConsole,
   });
 }
 
