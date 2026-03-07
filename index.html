@@ -3,26 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nuvra — Foundation</title>
-  <meta name="description" content="Nuvra Foundation — Phase 0–1: Deterministic Core, Live Runtime, Non-Static Editor" />
+  <title>Nuvra — AI App Builder</title>
+  <meta name="description" content="Nuvra — Phase 1–9: Deterministic Core, AI Planning, App Runtime, Preview, AI Generation, Cloud Sync, Billing, Marketplace, and Mobile Governance" />
 
-  <!-- Nuvra Foundation Styles -->
+  <!-- Nuvra Styles -->
   <link rel="stylesheet" href="./src/ui/styles.css" />
+  <style>
+    /* Critical base styles to prevent flash of unstyled content */
+    body { margin: 0; background: #0d1117; color: #f0f6fc; font-family: sans-serif; }
+    #nv-app { height: 100vh; display: flex; flex-direction: column; }
+    .nv-loading { display: flex; align-items: center; justify-content: center; height: 100%; font-size: 18px; font-weight: 600; letter-spacing: 1px; }
+  </style>
 </head>
 <body>
 
-  <!--
-    #nv-app is the single mount point for the entire application.
-    The editorShell module builds the full UI inside this element.
-    Nothing is hardcoded here — all UI is state-driven.
-  -->
-  <div id="nv-app"></div>
+  <!-- Single mount point for the entire application -->
+  <div id="nv-app">
+    <div class="nv-loading">Initializing Nuvra Engine...</div>
+  </div>
 
-  <!--
-    Boot sequence.
-    type="module" enables ES module imports and defers execution
-    until the DOM is ready.
-  -->
+  <!-- Boot sequence -->
   <script type="module" src="./src/main.js"></script>
 
 </body>

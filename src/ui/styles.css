@@ -193,31 +193,61 @@ html, body {
   display: flex;
   border-bottom: 1px solid var(--border-muted);
   flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.nv-sidebar-tabs::-webkit-scrollbar { display: none; }
+
 .nv-sidebar-tab {
-  flex: 1;
-  padding: 9px 4px;
+  padding: 12px 16px;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   cursor: pointer;
   transition: color 0.12s, border-color 0.12s;
+  white-space: nowrap;
 }
 .nv-sidebar-tab:hover  { color: var(--text-secondary); }
 .nv-sidebar-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
 .nv-sidebar-content { flex: 1; overflow-y: auto; }
-.nv-panel { display: none; padding: 12px; }
+.nv-panel { display: none; padding: 0; }
 .nv-panel.active { display: block; }
 .nv-panel-placeholder {
   color: var(--text-muted);
   font-size: 12px;
   font-style: italic;
   text-align: center;
-  padding: 24px 8px;
+  padding: 48px 24px;
+}
+
+/* ── Floating Panels (Marketplace, Mobile, Planning) ──────── */
+.nv-panel-hidden { display: none !important; }
+
+.nv-marketplace-panel-container,
+.nv-mobile-panel-container,
+.nv-planning-panel-container {
+  position: absolute;
+  top: var(--toolbar-h);
+  right: 0;
+  bottom: 0;
+  width: 400px;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border);
+  box-shadow: -4px 0 24px rgba(0,0,0,0.5);
+  z-index: 100;
+  overflow-y: auto;
+  animation: nv-slide-in 0.2s ease-out;
+}
+
+@keyframes nv-slide-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
 }
 
 /* ── Canvas ───────────────────────────────────────────────── */
@@ -343,27 +373,31 @@ html, body {
 
 .nv-profile-dropdown {
   position: absolute;
-  background-color: var(--nv-c-bg-alt);
-  min-width: 160px;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-  z-index: 1;
+  top: 100%;
   right: 0;
-  border-radius: var(--nv-border-radius);
+  background-color: var(--bg-elevated);
+  min-width: 180px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  z-index: 200;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-top: 8px;
   overflow: hidden;
 }
 
-.nv-profile-dropdown.nv-panel-hidden {
-  display: none;
-}
-
 .nv-profile-item {
-  color: var(--nv-c-text);
-  padding: 12px 16px;
-  text-decoration: none;
-  display: block;
+  color: var(--text-secondary);
+  padding: 10px 16px;
+  font-size: 12px;
   cursor: pointer;
+  transition: background 0.1s;
 }
 
 .nv-profile-item:hover {
-  background-color: var(--nv-c-primary-light);
+  background-color: rgba(255,255,255,0.05);
+  color: var(--text-primary);
+}
+
+.nv-profile-item + .nv-profile-item {
+  border-top: 1px solid var(--border-muted);
 }
