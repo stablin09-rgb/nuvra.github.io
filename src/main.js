@@ -122,6 +122,23 @@ function _try(label, fn) {
   }
 }
 
+/**
+ * Register a module with the runtime using a (name, mod) signature.
+ * Wraps runtime.register() which requires mod.id to be set.
+ * Silently skips null/undefined modules.
+ */
+function _registerModule(name, mod) {
+  if (!mod) return;
+  try {
+    // Attach the id if not already set
+    if (!mod.id) mod.id = name;
+    runtime.register(mod);
+  } catch (err) {
+    logger.warn('main', `[optional] registerModule("${name}") failed: ${err?.message || err}`);
+    console.warn(`[Nuvra] Module "${name}" registration failed:`, err);
+  }
+}
+
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 async function boot() {
   // ── Step 1: Install global error handlers ──────────────────────────────────
@@ -304,7 +321,7 @@ async function boot() {
     upgradeEngine, enterpriseBilling,
   };
   for (const [name, mod] of Object.entries(coreModules)) {
-    if (mod) runtime.registerModule(name, mod);
+    if (mod) _registerModule(name, mod);
   }
 
   // ── Phase 8: Extensions & Marketplace ──────────────────────────────────────
@@ -314,31 +331,31 @@ async function boot() {
 
   _try('ExtensionRegistry (P8)', () => {
     extensionRegistry = new ExtensionRegistry({ eventBus, store });
-    runtime.registerModule('extensionRegistry', extensionRegistry);
+    _registerModule('extensionRegistry', extensionRegistry);
   });
   _try('MarketplaceCatalog (P8)', () => {
     marketplaceCatalog = new MarketplaceCatalog({ eventBus, store });
-    runtime.registerModule('marketplaceCatalog', marketplaceCatalog);
+    _registerModule('marketplaceCatalog', marketplaceCatalog);
   });
   _try('RevenueEngine (P8)', () => {
     revenueEngine = new RevenueEngine({ eventBus, store });
-    runtime.registerModule('revenueEngine', revenueEngine);
+    _registerModule('revenueEngine', revenueEngine);
   });
   _try('ExtensionGovernance (P8)', () => {
     extensionGovernance = new ExtensionGovernance({ eventBus, store });
-    runtime.registerModule('extensionGovernance', extensionGovernance);
+    _registerModule('extensionGovernance', extensionGovernance);
   });
   _try('AIExtensionLayer (P8)', () => {
     aiExtensionLayer = new AIExtensionLayer({ eventBus, store });
-    runtime.registerModule('aiExtensionLayer', aiExtensionLayer);
+    _registerModule('aiExtensionLayer', aiExtensionLayer);
   });
   _try('ExtensionDevTools (P8)', () => {
     extensionDevTools = new ExtensionDevTools({ eventBus, store });
-    runtime.registerModule('extensionDevTools', extensionDevTools);
+    _registerModule('extensionDevTools', extensionDevTools);
   });
   _try('CompatibilityMatrix (P8)', () => {
     compatibilityMatrix = new CompatibilityMatrix({ eventBus, store });
-    runtime.registerModule('compatibilityMatrix', compatibilityMatrix);
+    _registerModule('compatibilityMatrix', compatibilityMatrix);
   });
 
   logger.info('main', 'Phase 8 modules registered');
@@ -352,47 +369,47 @@ async function boot() {
 
   _try('MobileRuntimeContract (P9)', () => {
     mobileRuntimeContract = new MobileRuntimeContract({ eventBus, store });
-    runtime.registerModule('mobileRuntimeContract', mobileRuntimeContract);
+    _registerModule('mobileRuntimeContract', mobileRuntimeContract);
   });
   _try('CapabilityDeclarationSystem (P9)', () => {
     capabilityDeclarationSystem = new CapabilityDeclarationSystem({ eventBus, store });
-    runtime.registerModule('capabilityDeclarationSystem', capabilityDeclarationSystem);
+    _registerModule('capabilityDeclarationSystem', capabilityDeclarationSystem);
   });
   _try('MobilePolicyEngine (P9)', () => {
     mobilePolicyEngine = new MobilePolicyEngine({ eventBus, store });
-    runtime.registerModule('mobilePolicyEngine', mobilePolicyEngine);
+    _registerModule('mobilePolicyEngine', mobilePolicyEngine);
   });
   _try('MobileAwarePlanner (P9)', () => {
     mobileAwarePlanner = new MobileAwarePlanner({ eventBus, store });
-    runtime.registerModule('mobileAwarePlanner', mobileAwarePlanner);
+    _registerModule('mobileAwarePlanner', mobileAwarePlanner);
   });
   _try('PreviewParityEnforcement (P9)', () => {
     previewParityEnforcement = new PreviewParityEnforcement({ eventBus, store });
-    runtime.registerModule('previewParityEnforcement', previewParityEnforcement);
+    _registerModule('previewParityEnforcement', previewParityEnforcement);
   });
   _try('GovernedBuildPipeline (P9)', () => {
     governedBuildPipeline = new GovernedBuildPipeline({ eventBus, store });
-    runtime.registerModule('governedBuildPipeline', governedBuildPipeline);
+    _registerModule('governedBuildPipeline', governedBuildPipeline);
   });
   _try('EnterpriseRegulatedProfiles (P9)', () => {
     enterpriseRegulatedProfiles = new EnterpriseRegulatedProfiles({ eventBus, store });
-    runtime.registerModule('enterpriseRegulatedProfiles', enterpriseRegulatedProfiles);
+    _registerModule('enterpriseRegulatedProfiles', enterpriseRegulatedProfiles);
   });
   _try('MobileVersioningRollback (P9)', () => {
     mobileVersioningRollback = new MobileVersioningRollback({ eventBus, store });
-    runtime.registerModule('mobileVersioningRollback', mobileVersioningRollback);
+    _registerModule('mobileVersioningRollback', mobileVersioningRollback);
   });
   _try('SecurityThreatModeling (P9)', () => {
     securityThreatModeling = new SecurityThreatModeling({ eventBus, store });
-    runtime.registerModule('securityThreatModeling', securityThreatModeling);
+    _registerModule('securityThreatModeling', securityThreatModeling);
   });
   _try('MobileReadinessDashboard (P9)', () => {
     // mobileReadinessDashboard is a singleton object (not a class)
-    runtime.registerModule('mobileReadinessDashboard', mobileReadinessDashboard);
+    _registerModule('mobileReadinessDashboard', mobileReadinessDashboard);
   });
   _try('CapabilityInspector (P9)', () => {
     capabilityInspector = new CapabilityInspector({ eventBus, store });
-    runtime.registerModule('capabilityInspector', capabilityInspector);
+    _registerModule('capabilityInspector', capabilityInspector);
   });
 
   logger.info('main', 'Phase 9 modules registered');
