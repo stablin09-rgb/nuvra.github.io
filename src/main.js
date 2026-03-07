@@ -150,6 +150,20 @@ import { supplyChainSecurity } from './security/supplyChainSecurity.js';
 import { threatModeler }       from './security/threatModeler.js';
 import { complianceConsole }   from './ui/complianceConsole.js';
 
+// ─── Phase 16: Nuvra Runtime Kernel (NRK) ─────────────────────────────────────
+import { ExecutionContext, ACTOR, INTENT, ENVIRONMENT, RISK_LEVEL } from './runtime/kernel/executionContext.js';
+import { IsolationManager, ISOLATION_MODE } from './runtime/kernel/isolationManager.js';
+import * as kernelModule from './runtime/kernel/kernel.js';
+import { DECISION as GATEKEEPER_DECISION, init as aiGatekeeperInit, evaluate as aiGatekeeperEvaluate } from './runtime/kernel/aiGatekeeper.js';
+import { AuditReplayer } from './runtime/kernel/auditReplayer.js';
+import { certReadiness, READINESS_LEVEL } from './runtime/kernel/certReadiness.js';
+import { init as evidenceVaultInit, record as evidenceRecord, query as evidenceQuery } from './runtime/kernel/evidenceVault.js';
+import { init as explainabilityInit } from './runtime/kernel/explainabilityLedger.js';
+import { SimulationEngine, SCENARIO_STATUS } from './runtime/kernel/simulationEngine.js';
+import { soc2Mapper, SOC2_CRITERIA } from './runtime/kernel/soc2Mapper.js';
+import { init as trustGraphInit, computeTrust, getTrustLevel, TRUST_LEVEL } from './runtime/kernel/trustGraph.js';
+import { runtimeConsole } from './ui/runtimeConsole.js';
+
 // ─── Helper ───────────────────────────────────────────────────────────────────
 function _getEnvVar(name) {
   if (typeof window !== 'undefined' && window.NUVRA_ENV_VARS?.[name]) {
@@ -720,6 +734,44 @@ async function boot() {
 
   logger.info('main', 'Phase 15 modules registered');
 
+  // ── Phase 16: Nuvra Runtime Kernel (NRK) ──────────────────────────────────────
+  _try('P16 kernelModule boot', async () => {
+    if (typeof kernelModule.boot === 'function') {
+      await kernelModule.boot({}, { env: 'production' });
+    }
+  });
+  _try('P16 aiGatekeeper init', () => {
+    aiGatekeeperInit({ enabled: true });
+  });
+  _try('P16 evidenceVault init', () => {
+    evidenceVaultInit('anonymous', 'default-project');
+  });
+  _try('P16 explainabilityLedger init', () => {
+    explainabilityInit('anonymous', 'default-project');
+  });
+  _try('P16 trustGraph init', () => {
+    trustGraphInit('anonymous');
+  });
+  _try('P16 runtimeConsole init', () => {
+    if (typeof runtimeConsole.init === 'function') runtimeConsole.init();
+    // Wire the Planning button left-click to open the runtime console
+    const planningBtn = document.querySelector('[hint="Toggle Planning Panel"]');
+    if (planningBtn && typeof runtimeConsole.show === 'function') {
+      planningBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        runtimeConsole.show();
+      });
+    }
+  });
+  _registerModule('executionContext', { ExecutionContext, ACTOR, INTENT, ENVIRONMENT, RISK_LEVEL });
+  _registerModule('isolationManager', { IsolationManager, ISOLATION_MODE });
+  _registerModule('kernelModule', kernelModule);
+  _registerModule('certReadiness', certReadiness);
+  _registerModule('soc2Mapper', soc2Mapper);
+  _registerModule('runtimeConsole', runtimeConsole);
+
+  logger.info('main', 'Phase 16 modules registered');
+
   // ── Step 25: Start all modules ─────────────────────────────────────────────
   _try('runtime.start', () => runtime.start());
 
@@ -807,7 +859,7 @@ async function boot() {
 
   // ── Step 38: Mark as booted ────────────────────────────────────────────────
   store.dispatch({ type: 'APP/SET_BOOTED', payload: true });
-  logger.info('main', 'Nuvra booted (Phase 15).');
+  logger.info('main', 'Nuvra booted (Phase 16).');
 
   // ── Debug handles ──────────────────────────────────────────────────────────
   Object.assign(window, {
@@ -843,6 +895,13 @@ async function boot() {
     permissionModel, PERMISSION_ACTIONS,
     pluginSandbox, CAPABILITIES,
     supplyChainSecurity, threatModeler, complianceConsole,
+    // Phase 16
+    ExecutionContext, ACTOR, INTENT, ENVIRONMENT, RISK_LEVEL,
+    IsolationManager, ISOLATION_MODE,
+    kernelModule, certReadiness, READINESS_LEVEL,
+    soc2Mapper, SOC2_CRITERIA,
+    TRUST_LEVEL, GATEKEEPER_DECISION, SCENARIO_STATUS,
+    AuditReplayer, SimulationEngine, runtimeConsole,
   });
 }
 
