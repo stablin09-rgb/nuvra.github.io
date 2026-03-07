@@ -1,0 +1,18 @@
+{
+  "name": "nuvra-p8",
+  "version": "1.0.0",
+  "description": "Nuvra Phase 8 development project.",
+  "main": "src/main.js",
+  "scripts": {
+    "test": "jest --transform={'\\.[jt]sx?$': 'babel-jest'}"
+  },
+  "keywords": [],
+  "author": "Manus AI",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.0",
+    "babel-jest": "^30.2.0",
+    "jest": "^30.2.0"
+  }
+}
