@@ -107,6 +107,16 @@ import { blueprintInstaller }  from './blueprints/blueprintInstaller.js';
 import { marketplaceAdvisor }  from './ai/marketplaceAdvisor.js';
 import { marketplaceStore }    from './ui/marketplaceStore.js';
 
+// ─── Phase 12: Enterprise Admin Console ──────────────────────────────────────
+import { auditService }        from './org/auditService.js';
+import { orgService }          from './org/orgService.js';
+import { policyEngine }        from './org/policyEngine.js';
+import * as identityService    from './org/identityService.js';
+import * as deploymentManager  from './cloud/deploymentManager.js';
+import * as whiteLabelService  from './cloud/whiteLabelService.js';
+import * as aiGovernance       from './ai/aiGovernance.js';
+import * as adminConsole       from './ui/adminConsole.js';
+
 // ─── Helper ───────────────────────────────────────────────────────────────────
 function _getEnvVar(name) {
   if (typeof window !== 'undefined' && window.NUVRA_ENV_VARS?.[name]) {
@@ -484,6 +494,58 @@ async function boot() {
 
   logger.info('main', 'Phase 11 modules registered');
 
+  // ── Phase 12: Enterprise Admin Console ──────────────────────────────────
+  _try('P12 auditService init', () => {
+    const authState = store.getState()?.auth || {};
+    if (typeof auditService.init === 'function') {
+      auditService.init(authState.orgId || 'default', authState.userId || 'guest', 'session-0');
+    }
+  });
+  _try('P12 orgService init', () => {
+    const authState = store.getState()?.auth || {};
+    if (typeof orgService.init === 'function') {
+      orgService.init(authState.userId || 'guest');
+    }
+  });
+  _try('P12 policyEngine init', () => {
+    const authState = store.getState()?.auth || {};
+    if (typeof policyEngine.init === 'function') {
+      policyEngine.init(authState.orgId || 'default');
+    }
+  });
+  _try('P12 deploymentManager init', () => {
+    const authState = store.getState()?.auth || {};
+    if (typeof deploymentManager.init === 'function') {
+      deploymentManager.init(authState.orgId || 'default');
+    }
+  });
+  _try('P12 whiteLabelService init', () => {
+    const authState = store.getState()?.auth || {};
+    if (typeof whiteLabelService.init === 'function') {
+      whiteLabelService.init(authState.orgId || 'default');
+    }
+  });
+  _try('P12 adminConsole init', () => {
+    // Initialize the admin console (creates the overlay panel + Profile button wiring)
+    if (typeof adminConsole.init === 'function') adminConsole.init();
+    // Wire the Profile button in the toolbar to open the admin console
+    const profileBtn = document.getElementById('nv-profile-btn') ||
+      document.querySelector('[hint="User Profile"], [data-hint="User Profile"]');
+    if (profileBtn && typeof adminConsole.toggle === 'function') {
+      profileBtn.addEventListener('click', () => adminConsole.toggle());
+    }
+  });
+  _registerModule('auditService', auditService);
+  _registerModule('orgService', orgService);
+  _registerModule('policyEngine', policyEngine);
+  _registerModule('identityService', identityService);
+  _registerModule('deploymentManager', deploymentManager);
+  _registerModule('whiteLabelService', whiteLabelService);
+  _registerModule('aiGovernance', aiGovernance);
+  _registerModule('adminConsole', adminConsole);
+
+  logger.info('main', 'Phase 12 modules registered');
+
   // ── Step 25: Start all modules ─────────────────────────────────────────────
   _try('runtime.start', () => runtime.start());
 
@@ -571,7 +633,7 @@ async function boot() {
 
   // ── Step 38: Mark as booted ────────────────────────────────────────────────
   store.dispatch({ type: 'APP/SET_BOOTED', payload: true });
-  logger.info('main', 'Nuvra booted (Phase 11).');
+  logger.info('main', 'Nuvra booted (Phase 12).');
 
   // ── Debug handles ──────────────────────────────────────────────────────────
   Object.assign(window, {
@@ -588,6 +650,9 @@ async function boot() {
     marketplaceService, assetRegistry, licenseEngine, revenueEngine11,
     analyticsService, versionResolver, creatorService, trustEngine,
     blueprintRegistry, blueprintInstaller, marketplaceAdvisor, marketplaceStore,
+    // Phase 12
+    auditService, orgService, policyEngine, identityService,
+    deploymentManager, whiteLabelService, aiGovernance, adminConsole,
   });
 }
 

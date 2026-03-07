@@ -227,3 +227,27 @@ export class AuthManager {
     if (!this._provider) throw new Error('AuthManager: no provider registered. Call useProvider() first.');
   }
 }
+
+// ─── Phase 12 Compatibility Helpers ──────────────────────────────────────────
+// identityService.js and other Phase 12 modules import these as named exports.
+// They delegate to the singleton authManager instance created in main.js.
+
+/**
+ * Get the current session info (userId, email, role).
+ * Returns null if no user is signed in.
+ */
+export async function getSession() {
+  if (typeof window !== 'undefined' && window.authManager) {
+    return window.authManager.getSessionInfo?.() || null;
+  }
+  return null;
+}
+
+/**
+ * Sign out the current user.
+ */
+export async function signOut() {
+  if (typeof window !== 'undefined' && window.authManager) {
+    return window.authManager.signOut?.();
+  }
+}

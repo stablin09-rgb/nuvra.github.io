@@ -1,0 +1,694 @@
+.nv-admin-btn {
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+}
+.nv-admin-btn:hover {
+  background: linear-gradient(135deg, #6d28d9, #4338ca);
+}
+
+/* ── Admin Console overlay ────────────────────────────────────── */
+#nv-admin-console {
+  position: fixed;
+  inset: 0;
+  z-index: 9900;
+  display: flex;
+  flex-direction: column;
+  background: #0f0f14;
+  color: #e2e8f0;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+}
+
+.nv-admin-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px;
+  background: #18181f;
+  border-bottom: 1px solid #2d2d3a;
+  flex-shrink: 0;
+}
+
+.nv-admin-header h1 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #a78bfa;
+  margin: 0;
+  flex: 1;
+}
+
+.nv-admin-close {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.nv-admin-close:hover { background: #2d2d3a; color: #e2e8f0; }
+
+/* ── Admin layout: sidebar + content ─────────────────────────── */
+.nv-admin-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.nv-admin-nav {
+  width: 220px;
+  background: #13131a;
+  border-right: 1px solid #2d2d3a;
+  padding: 16px 0;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.nv-admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 500;
+  border-left: 3px solid transparent;
+  transition: all 0.15s;
+}
+.nv-admin-nav-item:hover { background: #1e1e2a; color: #e2e8f0; }
+.nv-admin-nav-item.active {
+  background: #1e1e2a;
+  color: #a78bfa;
+  border-left-color: #7c3aed;
+}
+
+.nv-admin-nav-section {
+  padding: 16px 20px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #4b5563;
+}
+
+.nv-admin-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 32px;
+}
+
+/* ── Admin panel sections ─────────────────────────────────────── */
+.nv-admin-panel { display: none; }
+.nv-admin-panel.active { display: block; }
+
+.nv-admin-panel h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0 0 6px;
+}
+
+.nv-admin-panel .nv-admin-subtitle {
+  color: #64748b;
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+
+/* ── Stats grid (overview panel) ──────────────────────────────── */
+.nv-admin-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.nv-admin-stat {
+  background: #18181f;
+  border: 1px solid #2d2d3a;
+  border-radius: 10px;
+  padding: 18px;
+}
+
+.nv-admin-stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: #a78bfa;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.nv-admin-stat-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* ── Data table ───────────────────────────────────────────────── */
+.nv-admin-table-wrap {
+  background: #18181f;
+  border: 1px solid #2d2d3a;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.nv-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.nv-admin-table th {
+  background: #13131a;
+  padding: 10px 16px;
+  text-align: left;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid #2d2d3a;
+}
+
+.nv-admin-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #1e1e2a;
+  color: #cbd5e1;
+  vertical-align: middle;
+}
+
+.nv-admin-table tr:last-child td { border-bottom: none; }
+.nv-admin-table tr:hover td { background: #1e1e2a; }
+
+/* ── Role badges ──────────────────────────────────────────────── */
+.nv-role-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.nv-role-owner   { background: #7c3aed22; color: #a78bfa; border: 1px solid #7c3aed44; }
+.nv-role-admin   { background: #1d4ed822; color: #60a5fa; border: 1px solid #1d4ed844; }
+.nv-role-developer { background: #065f4622; color: #34d399; border: 1px solid #065f4644; }
+.nv-role-editor  { background: #78350f22; color: #fbbf24; border: 1px solid #78350f44; }
+.nv-role-viewer  { background: #1e293b;   color: #94a3b8; border: 1px solid #2d2d3a; }
+
+/* ── Policy editor ────────────────────────────────────────────── */
+.nv-policy-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.nv-policy-card {
+  background: #18181f;
+  border: 1px solid #2d2d3a;
+  border-radius: 10px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.nv-policy-card:hover { border-color: #7c3aed; }
+
+.nv-policy-card-name {
+  font-weight: 600;
+  color: #e2e8f0;
+  font-size: 14px;
+  flex: 1;
+}
+
+.nv-policy-card-scope {
+  font-size: 12px;
+  color: #64748b;
+  background: #1e1e2a;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.nv-policy-card-version {
+  font-size: 11px;
+  color: #4b5563;
+}
+
+/* Policy rule editor */
+.nv-policy-editor {
+  background: #18181f;
+  border: 1px solid #2d2d3a;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.nv-policy-editor h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0 0 16px;
+}
+
+.nv-rule-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.nv-rule-row select,
+.nv-rule-row input {
+  background: #0f0f14;
+  border: 1px solid #2d2d3a;
+  border-radius: 6px;
+  color: #e2e8f0;
+  padding: 7px 10px;
+  font-size: 13px;
+}
+
+.nv-rule-row select:focus,
+.nv-rule-row input:focus {
+  outline: none;
+  border-color: #7c3aed;
+}
+
+/* ── Audit log viewer ─────────────────────────────────────────── */
+.nv-audit-filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.nv-audit-filters input,
+.nv-audit-filters select {
+  background: #18181f;
+  border: 1px solid #2d2d3a;
+  border-radius: 6px;
+  color: #e2e8f0;
+  padding: 7px 12px;
+  font-size: 13px;
+  min-width: 140px;
+}
+
+.nv-severity-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.nv-sev-low      { background: #1e293b;   color: #64748b; }
+.nv-sev-medium   { background: #78350f22; color: #fbbf24; }
+.nv-sev-high     { background: #7f1d1d22; color: #f87171; }
+.nv-sev-critical { background: #7c3aed22; color: #c084fc; }
+
+.nv-legal-hold-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  background: #7f1d1d;
+  color: #fca5a5;
+  text-transform: uppercase;
+}
+
+/* ── AI Governance panel ──────────────────────────────────────── */
+.nv-ai-gov-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 900px) {
+  .nv-ai-gov-grid { grid-template-columns: 1fr; }
+}
+
+.nv-ai-gov-card {
+  background: #18181f;
+  border: 1px solid #2d2d3a;
+  border-radius: 10px;
+  padding: 18px;
+}
+
+.nv-ai-gov-card h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 12px;
+}
+
+.nv-model-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #1e1e2a;
+}
+.nv-model-toggle:last-child { border-bottom: none; }
+
+.nv-model-toggle label {
+  font-size: 13px;
+  color: #cbd5e1;
+  font-weight: 500;
+}
+
+/* Toggle switch */
+.nv-toggle {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+.nv-toggle input { opacity: 0; width: 0; height: 0; }
+.nv-toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: #2d2d3a;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.nv-toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  left: 3px;
+  top: 3px;
+  background: #64748b;
+  border-radius: 50%;
+  transition: transform 0.2s, background 0.2s;
+}
+.nv-toggle input:checked + .nv-toggle-slider { background: #7c3aed; }
+.nv-toggle input:checked + .nv-toggle-slider::before {
+  transform: translateX(16px);
+  background: #fff;
+}
+
+/* ── White-label preview ──────────────────────────────────────── */
+.nv-wl-preview {
+  background: #18181f;
+  border: 1px solid #2d2d3a;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.nv-wl-preview-bar {
+  background: var(--wl-primary, #7c3aed);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nv-wl-preview-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  font-size: 14px;
+}
+
+.nv-wl-preview-name {
+  font-weight: 700;
+  color: #fff;
+  font-size: 15px;
+}
+
+.nv-wl-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 700px) {
+  .nv-wl-form-grid { grid-template-columns: 1fr; }
+}
+
+.nv-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.nv-form-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.nv-form-group input,
+.nv-form-group select,
+.nv-form-group textarea {
+  background: #0f0f14;
+  border: 1px solid #2d2d3a;
+  border-radius: 6px;
+  color: #e2e8f0;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.nv-form-group input:focus,
+.nv-form-group select:focus,
+.nv-form-group textarea:focus {
+  outline: none;
+  border-color: #7c3aed;
+}
+
+/* ── SSO config panel ─────────────────────────────────────────── */
+.nv-sso-provider-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.nv-sso-provider-tab {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid #2d2d3a;
+  background: #18181f;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.nv-sso-provider-tab.active {
+  background: #7c3aed;
+  border-color: #7c3aed;
+  color: #fff;
+}
+
+/* ── Deployment panel ─────────────────────────────────────────── */
+.nv-deployment-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.nv-deployment-card {
+  background: #18181f;
+  border: 2px solid #2d2d3a;
+  border-radius: 10px;
+  padding: 18px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  text-align: center;
+}
+.nv-deployment-card:hover { border-color: #7c3aed; }
+.nv-deployment-card.active { border-color: #7c3aed; background: #1e1e2a; }
+
+.nv-deployment-card-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.nv-deployment-card-name {
+  font-weight: 600;
+  color: #e2e8f0;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.nv-deployment-card-desc {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* ── Feature flags panel ──────────────────────────────────────── */
+.nv-flag-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nv-flag-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #18181f;
+  border-radius: 6px;
+  border: 1px solid #1e1e2a;
+}
+
+.nv-flag-info { flex: 1; }
+
+.nv-flag-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e2e8f0;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.nv-flag-desc {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* ── Admin action buttons ─────────────────────────────────────── */
+.nv-admin-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.nv-admin-btn-primary {
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.nv-admin-btn-primary:hover { background: #6d28d9; }
+
+.nv-admin-btn-secondary {
+  background: #18181f;
+  color: #94a3b8;
+  border: 1px solid #2d2d3a;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.nv-admin-btn-secondary:hover { border-color: #7c3aed; color: #e2e8f0; }
+
+.nv-admin-btn-danger {
+  background: #7f1d1d22;
+  color: #f87171;
+  border: 1px solid #7f1d1d44;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.nv-admin-btn-danger:hover { background: #7f1d1d44; }
+
+/* ── Empty state ──────────────────────────────────────────────── */
+.nv-admin-empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: #4b5563;
+}
+
+.nv-admin-empty-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.nv-admin-empty-text {
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* ── Loading spinner ──────────────────────────────────────────── */
+.nv-admin-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  color: #64748b;
+  font-size: 14px;
+  gap: 12px;
+}
+
+.nv-admin-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #2d2d3a;
+  border-top-color: #7c3aed;
+  border-radius: 50%;
+  animation: nv-spin 0.7s linear infinite;
+}
+
+@keyframes nv-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Invite member modal ──────────────────────────────────────── */
+.nv-invite-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nv-invite-modal-box {
+  background: #18181f;
+  border: 1px solid #2d2d3a;
+  border-radius: 12px;
+  padding: 28px;
+  width: 420px;
+  max-width: 95vw;
+}
+
+.nv-invite-modal-box h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0 0 20px;
+}
+
+/* ── Scrollbar (admin console) ────────────────────────────────── */
+#nv-admin-console ::-webkit-scrollbar { width: 6px; }
+#nv-admin-console ::-webkit-scrollbar-track { background: transparent; }
+#nv-admin-console ::-webkit-scrollbar-thumb { background: #2d2d3a; border-radius: 3px; }
+#nv-admin-console ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
