@@ -207,4 +207,4 @@ export const editorShell = {
   }
 };
 
-export default editorShell;'''
+export default editorShell;
