@@ -112,7 +112,7 @@ export const toolbar = {
 
         <!-- User/Profile Menu Placeholder -->
         <div class="nv-profile-menu">
-          <button class="nv-btn" data-action="toggle-profile-menu" title="User Profile">
+          <button class="nv-btn" id="nv-profile-btn" data-action="toggle-profile-menu" title="User Profile" hint="User Profile">
             &#128100; Profile
           </button>
           <div class="nv-profile-dropdown nv-panel-hidden">
@@ -176,9 +176,8 @@ export const toolbar = {
       case 'toggle-planning-panel':
         store.dispatch({ type: 'UI/TOGGLE_PANEL', payload: 'planning' }); break;
       case 'toggle-profile-menu':
-        // Toggle visibility of the dropdown
-        const dropdown = this._el.querySelector('.nv-profile-dropdown');
-        dropdown.classList.toggle('nv-panel-hidden');
+        // Emit event so admin console (or other panels) can respond
+        eventBus.emit('ui:toggle_profile_panel', {});
         break;
       case 'show-billing':
         // Handle showing billing dashboard

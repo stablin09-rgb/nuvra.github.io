@@ -857,6 +857,14 @@ async function boot() {
   editorShell.start(runtime);
   logger.info('main', 'Editor shell started');
 
+  // ── Post-shell wiring: wire toolbar events to panels ──
+  _try('post-shell adminConsole eventBus wiring', () => {
+    if (typeof adminConsole.toggle === 'function') {
+      eventBus.on('ui:toggle_profile_panel', () => adminConsole.toggle());
+      logger.info('main', 'Admin console wired to ui:toggle_profile_panel event');
+    }
+  });
+
   // ── Step 38: Mark as booted ────────────────────────────────────────────────
   store.dispatch({ type: 'APP/SET_BOOTED', payload: true });
   logger.info('main', 'Nuvra booted (Phase 16).');
