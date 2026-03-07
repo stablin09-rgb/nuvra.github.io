@@ -1,0 +1,38 @@
+diff a/index.html b/index.html	(rejected hunks)
+@@ -49,13 +49,32 @@
+   <input
+     id="aiPrompt"
+     type="text"
+-    placeholder="Describe a page, app, or full site to generate…"
++    placeholder="Describe a page, app, or full site…"
+     autocomplete="off"
+     spellcheck="false"
+   />
+-  <button id="btn-generate-ai"   class="nuvra-btn primary" title="Generate a single page with AI">Generate Page</button>
+-  <button id="btn-generate-site" class="nuvra-btn"         title="Generate a full multi-page site with AI">Generate Site</button>
+-  <button id="btn-ai-settings"   class="nuvra-btn"         title="Configure AI provider">AI Settings</button>
++  <div class="nv-generate-group">
++    <button id="btn-generate-ai" class="nuvra-btn primary" title="Generate with AI">Generate</button>
++    <button id="btn-generate-mode" class="nuvra-btn primary nv-generate-mode-btn" title="Choose generation mode" aria-haspopup="true">&#9660;</button>
++    <div id="generate-mode-menu" class="nv-generate-menu" role="menu" style="display:none;">
++      <button class="nv-generate-menu-item active" data-mode="page" role="menuitem">
++        <span class="nv-menu-icon">&#9633;</span>
++        <span class="nv-menu-label">Marketing Page</span>
++        <span class="nv-menu-desc">Landing, blog, pricing, portfolio</span>
++      </button>
++      <button class="nv-generate-menu-item" data-mode="app" role="menuitem">
++        <span class="nv-menu-icon">&#9638;</span>
++        <span class="nv-menu-label">App Page</span>
++        <span class="nv-menu-desc">Dashboard, CRUD, internal tool</span>
++      </button>
++      <button class="nv-generate-menu-item" data-mode="site" role="menuitem">
++        <span class="nv-menu-icon">&#9635;</span>
++        <span class="nv-menu-label">Full Site</span>
++        <span class="nv-menu-desc">Multi-page website (Home, About, etc.)</span>
++      </button>
++    </div>
++  </div>
++  <button id="btn-ai-settings" class="nuvra-btn" title="Configure AI provider">AI Settings</button>
+   <span id="aiStatus"></span>
+ 
+   <div class="divider"></div>

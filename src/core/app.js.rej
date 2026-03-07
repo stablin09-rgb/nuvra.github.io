@@ -1,0 +1,243 @@
+diff a/src/core/app.js b/src/core/app.js	(rejected hunks)
+@@ -198,105 +198,164 @@ document.getElementById('btn-ai-settings').addEventListener('click', openAISetti
+ 
+ // ─── 8. AI Generation ─────────────────────────────────────────────────────────
+ 
+-document.getElementById('btn-generate-ai').addEventListener('click', async () => {
+-  const promptInput = document.getElementById('aiPrompt');
+-  const statusEl    = document.getElementById('aiStatus');
+-  const prompt      = promptInput.value.trim();
++// ─── 8a. Generate Mode Dropdown ───────────────────────────────────────────────
+ 
+-  if (!prompt) {
+-    showToast('Please describe the page you want to generate.', 'error');
+-    return;
+-  }
++/** Currently selected generation mode: 'page' | 'app' | 'site' */
++let _generateMode = 'page';
+ 
+-  const { pages } = getSnapshot();
+-  const id = slugify(prompt);
+-  if (pages[id]) {
+-    showToast(`A page with this name already exists. Try a different description.`, 'error');
+-    return;
+-  }
++(function _initGenerateModeDropdown() {
++  const modeBtn = document.getElementById('btn-generate-mode');
++  const menu    = document.getElementById('generate-mode-menu');
++  const mainBtn = document.getElementById('btn-generate-ai');
++  if (!modeBtn || !menu) return;
+ 
+-  const btn = document.getElementById('btn-generate-ai');
+-  btn.disabled     = true;
+-  btn.textContent  = 'Generating…';
+-  statusEl.textContent = 'AI is building your page…';
+-  statusEl.classList.add('visible');
+-
+-  try {
+-    const result = await generatePage(prompt);
+-    addGeneratedPage(id, result.name, result.html, result.css, result.schema ?? null);
+-    promptInput.value = '';
+-    showToast(`Page "${result.name}" generated successfully.`, 'success');
+-
+-    console.info(
+-      `[Nuvra AI] Generated via ${result.meta.provider}/${result.meta.model}` +
+-      (result.meta.tokens ? ` — ${result.meta.tokens} tokens` : '')
+-    );
+-  } catch (err) {
+-    console.error('[Nuvra AI] Generation failed:', err);
+-    showToast(`AI generation failed: ${err.message}`, 'error');
+-  } finally {
+-    btn.disabled    = false;
+-    btn.textContent = 'Generate Page';
+-    statusEl.classList.remove('visible');
+-  }
+-});
++  const MODE_LABELS = { page: 'Generate Page', app: 'Generate App', site: 'Generate Site' };
+ 
+-document.getElementById('aiPrompt').addEventListener('keydown', (e) => {
+-  if (e.key === 'Enter') document.getElementById('btn-generate-ai').click();
+-});
++  modeBtn.addEventListener('click', (e) => {
++    e.stopPropagation();
++    menu.style.display = menu.style.display !== 'none' ? 'none' : 'block';
++  });
++
++  document.addEventListener('click', () => { menu.style.display = 'none'; });
++  menu.addEventListener('click', (e) => e.stopPropagation());
++
++  menu.querySelectorAll('.nv-generate-menu-item').forEach((item) => {
++    item.addEventListener('click', () => {
++      const mode = item.dataset.mode;
++      _generateMode = mode;
++      menu.querySelectorAll('.nv-generate-menu-item').forEach((i) => i.classList.remove('active'));
++      item.classList.add('active');
++      mainBtn.textContent = MODE_LABELS[mode] || 'Generate';
++      menu.style.display = 'none';
++      const promptInput = document.getElementById('aiPrompt');
++      if (promptInput) {
++        promptInput.placeholder = mode === 'page' ? 'Describe a marketing page…'
++                                : mode === 'app'  ? 'Describe an app, dashboard, or tool…'
++                                :                  'Describe a full multi-page site…';
++      }
++    });
++  });
++})();
+ 
+-// ─── 9. AI Site Generation (multi-page) ──────────────────────────────────────
++// ─── 8b. Unified Generate Button ─────────────────────────────────────────────
+ 
+-document.getElementById('btn-generate-site').addEventListener('click', async () => {
++document.getElementById('btn-generate-ai').addEventListener('click', async () => {
+   const promptInput = document.getElementById('aiPrompt');
+   const statusEl    = document.getElementById('aiStatus');
+   const prompt      = promptInput.value.trim();
++  const btn         = document.getElementById('btn-generate-ai');
+ 
+   if (!prompt) {
+-    showToast('Please describe the site you want to generate.', 'error');
++    showToast('Please describe what you want to generate.', 'error');
+     return;
+   }
+ 
+-  const btn = document.getElementById('btn-generate-site');
+-  btn.disabled    = true;
+-  btn.textContent = 'Planning…';
+-  statusEl.textContent = 'AI is planning your site…';
+-  statusEl.classList.add('visible');
++  if (_generateMode === 'page') {
++    // ── Marketing Page ─────────────────────────────────────────────────────
++    const { pages } = getSnapshot();
++    const id = slugify(prompt);
++    if (pages[id]) {
++      showToast('A page with this name already exists.', 'error');
++      return;
++    }
++    btn.disabled = true; btn.textContent = 'Generating…';
++    statusEl.textContent = 'AI is building your page…'; statusEl.classList.add('visible');
++    try {
++      const result = await generatePage(prompt);
++      addGeneratedPage(id, result.name, result.html, result.css, result.schema ?? null);
++      promptInput.value = '';
++      showToast(`Page "${result.name}" generated.`, 'success');
++      console.info(`[Nuvra AI] Page via ${result.meta.provider}/${result.meta.model}`);
++    } catch (err) {
++      console.error('[Nuvra AI] Page failed:', err);
++      showToast(`Generation failed: ${err.message}`, 'error');
++    } finally {
++      btn.disabled = false; btn.textContent = 'Generate Page'; statusEl.classList.remove('visible');
++    }
++
++  } else if (_generateMode === 'app') {
++    // ── App Generation ─────────────────────────────────────────────────────
++    btn.disabled = true; btn.textContent = 'Planning…';
++    statusEl.textContent = 'AI is planning your app…'; statusEl.classList.add('visible');
++
++    const toast = document.createElement('div');
++    toast.className = 'nv-app-gen-toast';
++    toast.innerHTML = `
++      <div class="nv-app-gen-toast-title">Generating App…</div>
++      <div class="nv-app-gen-toast-step" id="nv-gen-step">Analysing prompt…</div>
++      <div class="nv-app-gen-toast-bar"><div class="nv-app-gen-toast-fill" id="nv-gen-fill" style="width:10%"></div></div>
++      <div class="nv-app-gen-toast-summary" id="nv-gen-summary"></div>`;
++    document.body.appendChild(toast);
++
++    const setStep = (label, pct) => {
++      const s = document.getElementById('nv-gen-step');
++      const f = document.getElementById('nv-gen-fill');
++      if (s) s.textContent = label;
++      if (f) f.style.width = `${pct}%`;
++    };
+ 
+-  try {
+-    const pages = await generateSite(prompt);
+-    statusEl.textContent = `Generating ${pages.length} page${pages.length > 1 ? 's' : ''}…`;
++    try {
++      setStep('Analysing prompt…', 20);
++      await new Promise((r) => setTimeout(r, 80));
++      setStep('Building data model…', 45);
++      const output = await generateApp(prompt);
++      setStep('Rendering pages…', 80);
++      await new Promise((r) => setTimeout(r, 60));
++
++      for (const page of output.pages) {
++        const { pages: existing } = getSnapshot();
++        let id = page.pageId;
++        if (existing[id]) id = `${id}-${Date.now().toString(36)}`;
++        addGeneratedPage(id, page.pageName, page.html, page.css, page.appSchema ?? null, 'dashboard');
++      }
+ 
+-    let firstPageId = null;
+-    for (const page of pages) {
+-      const { pages: existingPages } = getSnapshot();
+-      let id = page.pageId;
+-      if (existingPages[id]) id = `${id}-${Date.now().toString(36)}`;
++      setStep('Done!', 100);
++      const summaryEl = document.getElementById('nv-gen-summary');
++      if (summaryEl) summaryEl.textContent = `"${output.appName}" — ${output.collectionIds.length} collection(s), ${output.pages.length} page(s) via ${output.meta.provider}/${output.meta.model}`;
+ 
+-      addGeneratedPage(id, page.pageName, page.html, page.css, page.schema ?? null);
+-      if (!firstPageId) firstPageId = id;
++      promptInput.value = '';
++      showToast(`App "${output.appName}" generated: ${output.pages.length} page(s).`, 'success');
++      const appTab = document.querySelector('[data-panel="app-components-panel"]');
++      if (appTab) appTab.click();
++      _renderCollectionsList();
++      console.info(`[Nuvra AI] App "${output.appName}" — ${output.collectionIds.length} collections, ${output.pages.length} pages via ${output.meta.provider}/${output.meta.model}`);
++    } catch (err) {
++      console.error('[Nuvra AI] App failed:', err);
++      showToast(`App generation failed: ${err.message}`, 'error');
++    } finally {
++      btn.disabled = false; btn.textContent = 'Generate App'; statusEl.classList.remove('visible');
++      setTimeout(() => toast.remove(), 3500);
+     }
+ 
+-    promptInput.value = '';
+-    showToast(
+-      `Site generated: ${pages.length} page${pages.length > 1 ? 's' : ''} created.`,
+-      'success'
+-    );
+-
+-    console.info(
+-      `[Nuvra AI] Site generated — ${pages.length} pages via ` +
+-      `${pages[0]?.meta?.provider ?? 'mock'}/${pages[0]?.meta?.model ?? 'unknown'}`
+-    );
+-  } catch (err) {
+-    console.error('[Nuvra AI] Site generation failed:', err);
+-    showToast(`Site generation failed: ${err.message}`, 'error');
+-  } finally {
+-    btn.disabled    = false;
+-    btn.textContent = 'Generate Site';
+-    statusEl.classList.remove('visible');
++  } else if (_generateMode === 'site') {
++    // ── Full Site Generation ────────────────────────────────────────────────
++    btn.disabled = true; btn.textContent = 'Planning…';
++    statusEl.textContent = 'AI is planning your site…'; statusEl.classList.add('visible');
++    try {
++      const pages = await generateSite(prompt);
++      statusEl.textContent = `Generating ${pages.length} page(s)…`;
++      for (const page of pages) {
++        const { pages: existing } = getSnapshot();
++        let id = page.pageId;
++        if (existing[id]) id = `${id}-${Date.now().toString(36)}`;
++        addGeneratedPage(id, page.pageName, page.html, page.css, page.schema ?? null);
++      }
++      promptInput.value = '';
++      showToast(`Site generated: ${pages.length} page(s) created.`, 'success');
++      console.info(`[Nuvra AI] Site — ${pages.length} pages via ${pages[0]?.meta?.provider ?? 'mock'}`);
++    } catch (err) {
++      console.error('[Nuvra AI] Site failed:', err);
++      showToast(`Site generation failed: ${err.message}`, 'error');
++    } finally {
++      btn.disabled = false; btn.textContent = 'Generate Site'; statusEl.classList.remove('visible');
++    }
+   }
+ });
+ 
++document.getElementById('aiPrompt').addEventListener('keydown', (e) => {
++  if (e.key === 'Enter') document.getElementById('btn-generate-ai').click();
++});
++
+ // ─── 10. Sidebar tab switching ────────────────────────────────────────────────
+ 
+ document.querySelectorAll('.sidebar-tab').forEach((tab) => {

@@ -1,0 +1,790 @@
+diff --git a/index.html b/index.html
+index 767c1bf..e4af922 100644
+--- a/index.html
++++ b/index.html
+@@ -49,13 +49,32 @@
+   <input
+     id="aiPrompt"
+     type="text"
+-    placeholder="Describe a page, app, or full site to generate…"
++    placeholder="Describe a page, app, or full site…"
+     autocomplete="off"
+     spellcheck="false"
+   />
+-  <button id="btn-generate-ai"   class="nuvra-btn primary" title="Generate a single page with AI">Generate Page</button>
+-  <button id="btn-generate-site" class="nuvra-btn"         title="Generate a full multi-page site with AI">Generate Site</button>
+-  <button id="btn-ai-settings"   class="nuvra-btn"         title="Configure AI provider">AI Settings</button>
++  <div class="nv-generate-group">
++    <button id="btn-generate-ai" class="nuvra-btn primary" title="Generate with AI">Generate</button>
++    <button id="btn-generate-mode" class="nuvra-btn primary nv-generate-mode-btn" title="Choose generation mode" aria-haspopup="true">&#9660;</button>
++    <div id="generate-mode-menu" class="nv-generate-menu" role="menu" style="display:none;">
++      <button class="nv-generate-menu-item active" data-mode="page" role="menuitem">
++        <span class="nv-menu-icon">&#9633;</span>
++        <span class="nv-menu-label">Marketing Page</span>
++        <span class="nv-menu-desc">Landing, blog, pricing, portfolio</span>
++      </button>
++      <button class="nv-generate-menu-item" data-mode="app" role="menuitem">
++        <span class="nv-menu-icon">&#9638;</span>
++        <span class="nv-menu-label">App Page</span>
++        <span class="nv-menu-desc">Dashboard, CRUD, internal tool</span>
++      </button>
++      <button class="nv-generate-menu-item" data-mode="site" role="menuitem">
++        <span class="nv-menu-icon">&#9635;</span>
++        <span class="nv-menu-label">Full Site</span>
++        <span class="nv-menu-desc">Multi-page website (Home, About, etc.)</span>
++      </button>
++    </div>
++  </div>
++  <button id="btn-ai-settings" class="nuvra-btn" title="Configure AI provider">AI Settings</button>
+   <span id="aiStatus"></span>
+ 
+   <div class="divider"></div>
+diff --git a/src/ai/aiEngine.js b/src/ai/aiEngine.js
+index ed6a2ce..29a03fd 100644
+--- a/src/ai/aiEngine.js
++++ b/src/ai/aiEngine.js
+@@ -53,6 +53,13 @@ import { ProviderBase, sessionBudget }    from './providerBase.js';
+ import { OpenAIProvider }                 from './providers/openaiProvider.js';
+ import { AnthropicProvider }              from './providers/anthropicProvider.js';
+ import { LocalProvider }                  from './providers/localProvider.js';
++import { analyseAppPrompt, planApp }      from './appPlanner.js';
++import { validateAppGenerationResult,
++         createDefaultAppResult }         from './appSchema.js';
++import { registerAiCollections,
++         renderAppPageSchema }            from './appSchemaRenderer.js';
++import { buildAppSystemPrompt,
++         buildAppUserMessage }            from './promptBuilder.js';
+ 
+ // ─── Mock Provider ────────────────────────────────────────────────────────────
+ 
+@@ -80,6 +87,76 @@ class MockProvider extends ProviderBase {
+     return mockGenerateSite(prompt, options);
+   }
+ 
++  /**
++   * Mock app generation: uses the AppPlanner to build a realistic result
++   * without any API call.
++   */
++  async _generateApp(prompt, options = {}) {
++    const { analyseAppPrompt: analyse, planApp: plan, getAppBlueprint } =
++      await import('./appPlanner.js');
++    const intent    = analyse(prompt);
++    const appPlan   = plan(intent);
++    const blueprint = getAppBlueprint(intent.appType);
++
++    // Build the AppGenerationResult from the blueprint
++    const appName = intent.appName;
++    const accent  = options.accentColor || intent.accentColor || '#7c6af7';
++
++    // Deep-clone collections from blueprint and personalise
++    const collections = blueprint.collections.map((col) => ({
++      ...col,
++      id:   col.id,
++      name: col.name,
++    }));
++
++    // Build pages from the plan
++    const pages = appPlan.pages.map((pagePlan) => {
++      const components = pagePlan.components.map((compType, idx) => {
++        const primaryCol = collections[0]?.id || 'items';
++        const configs = {
++          'app-header':  { title: appName, subtitle: `Manage your ${appName.toLowerCase()} data` },
++          'stat-row':    { stats: [
++            { label: 'Total',    value: '—', trend: '',   direction: 'up' },
++            { label: 'Active',   value: '—', trend: '+5', direction: 'up' },
++            { label: 'Pending',  value: '—', trend: '',   direction: 'down' },
++            { label: 'Done',     value: '—', trend: '+2', direction: 'up' },
++          ]},
++          'data-table':  { collectionId: primaryCol, heading: collections[0]?.name || 'Records', showSearch: true, showAdd: true },
++          'data-form':   { collectionId: primaryCol, mode: 'create', title: `Add ${collections[0]?.name?.replace(/s$/, '') || 'Record'}`, submitLabel: 'Save' },
++          'data-list':   { collectionId: primaryCol, heading: collections[0]?.name || 'Records', displayField: 'title' },
++        };
++        return {
++          id:     `${compType}-${idx}`,
++          type:   compType,
++          config: configs[compType] || {},
++          actions: compType === 'data-table' ? [{ id: 'fetch', config: { collection: primaryCol } }]
++                 : compType === 'data-form'  ? [{ id: 'submit', config: { collection: primaryCol, mode: 'create' } }]
++                 : [],
++        };
++      });
++
++      return {
++        pageId:     pagePlan.pageId,
++        pageName:   pagePlan.pageName,
++        intent:     'app',
++        appType:    pagePlan.appType,
++        title:      pagePlan.pageName,
++        layout:     pagePlan.layout || 'full-width',
++        components,
++        settings:   { accentColor: accent, primaryCollection: collections[0]?.id },
++      };
++    });
++
++    return {
++      appName,
++      description: `A ${blueprint.label} built with Nuvra.`,
++      collections,
++      pages,
++      settings: { accentColor: accent, theme: 'light' },
++      _meta: { provider: 'mock', model: 'mock-v2', tokens: 0 },
++    };
++  }
++
+   // _callAPI is not used by MockProvider
+   async _callAPI() {
+     throw new Error('MockProvider does not use _callAPI.');
+@@ -203,6 +280,112 @@ export async function generateSite(prompt, options = {}) {
+   });
+ }
+ 
++/**
++ * Generate a full data-driven application from a natural-language prompt.
++ *
++ * Pipeline:
++ *   prompt → analyseAppPrompt → planApp → provider._generateApp → registerAiCollections → renderAppPageSchema
++ *
++ * @typedef {object} AppPageGenerationResult
++ * @property {string} pageId    - URL slug for the page
++ * @property {string} pageName  - Display name
++ * @property {string} html      - Rendered HTML for GrapesJS
++ * @property {string} css       - Rendered CSS for GrapesJS
++ * @property {object} appSchema - The raw AppPageSchema
++ * @property {'app'}  intent    - Always 'app'
++ * @property {object} meta      - { provider, model, tokens }
++ *
++ * @typedef {object} AppGenerationOutput
++ * @property {string}                   appName
++ * @property {string[]}                 collectionIds  - IDs of registered collections
++ * @property {AppPageGenerationResult[]} pages
++ * @property {object}                   meta
++ *
++ * @param {string} prompt
++ * @param {object} [options]
++ * @param {string} [options.accentColor]
++ * @returns {Promise<AppGenerationOutput>}
++ */
++export async function generateApp(prompt, options = {}) {
++  if (!_activeProvider) {
++    console.warn('[Nuvra AI] No provider configured — defaulting to mock.');
++    _activeProvider = new MockProvider({});
++  }
++
++  // ── Step 1: Analyse prompt and build a plan ──────────────────────────────
++  const intent  = analyseAppPrompt(prompt);
++  const appPlan = planApp(intent);
++
++  const accentColor = options.accentColor || intent.accentColor || '#7c6af7';
++
++  // ── Step 2: Call provider to get AppGenerationResult ────────────────────
++  let appResult;
++
++  if (_activeProvider.id === 'mock') {
++    // Mock provider has a dedicated _generateApp method
++    appResult = await _activeProvider._generateApp(prompt, { ...options, accentColor });
++  } else {
++    // Real providers: use the app system prompt and parse the response
++    const systemPrompt = buildAppSystemPrompt({
++      appContext:   appPlan.systemPromptContext,
++      accentColor,
++    });
++    const userMessage  = buildAppUserMessage(prompt, appPlan.systemPromptContext);
++
++    // Use the provider's raw _callAPI to get the structured response
++    const raw = await _activeProvider._callAPI(systemPrompt, userMessage, {
++      maxOutputTokens: 4096,
++    });
++
++    try {
++      appResult = JSON.parse(raw.content);
++    } catch (e) {
++      console.error('[Nuvra AI] App generation: JSON parse failed. Falling back to mock.', e);
++      appResult = createDefaultAppResult(intent.appName);
++    }
++
++    // Validate and repair if needed
++    const validation = validateAppGenerationResult(appResult);
++    if (!validation.valid) {
++      console.warn('[Nuvra AI] App result validation errors:', validation.errors);
++      if (!appResult.collections || !appResult.pages) {
++        appResult = createDefaultAppResult(intent.appName);
++      }
++    }
++  }
++
++  // ── Step 3: Register collections into the DataStore ─────────────────────
++  const collectionIds = registerAiCollections(appResult.collections || []);
++
++  // ── Step 4: Render each app page to HTML/CSS ─────────────────────────────
++  const meta = appResult._meta || { provider: _activeProvider.id, model: _activeProvider.model || 'unknown', tokens: 0 };
++
++  const pages = (appResult.pages || []).map((pageSchema) => {
++    const { html, css } = renderAppPageSchema(pageSchema);
++    return {
++      pageId:    pageSchema.pageId,
++      pageName:  pageSchema.pageName,
++      html,
++      css,
++      appSchema: pageSchema,
++      intent:    'app',
++      meta,
++    };
++  });
++
++  console.info(
++    `[Nuvra AI] App generated: "${appResult.appName}" — ` +
++    `${collectionIds.length} collection(s), ${pages.length} page(s) via ${meta.provider}/${meta.model}`
++  );
++
++  return {
++    appName:       appResult.appName,
++    collectionIds,
++    pages,
++    meta,
++  };
++}
++
+ /**
+  * Return the name of the currently active provider.
+  * @returns {string}
+diff --git a/src/ai/promptBuilder.js b/src/ai/promptBuilder.js
+index bbea180..0830edd 100644
+--- a/src/ai/promptBuilder.js
++++ b/src/ai/promptBuilder.js
+@@ -20,7 +20,8 @@
+ 
+ 'use strict';
+ 
+-import { getRegisteredSectionTypes } from './schemaRenderer.js';
++import { getRegisteredSectionTypes }    from './schemaRenderer.js';
++import { getRegisteredAppComponentTypes } from './appSchemaRenderer.js';
+ 
+ // ─── System Prompt Builder ────────────────────────────────────────────────────
+ 
+@@ -159,3 +160,122 @@ export function buildUserMessage(prompt) {
+ export function buildSiteUserMessage(prompt) {
+   return `Generate a complete website for: "${prompt}"`;
+ }
++
++// ─── App Generation Prompts ───────────────────────────────────────────────────
++
++/**
++ * Build the system prompt for app generation.
++ * Instructs the LLM to return a full AppGenerationResult JSON object.
++ *
++ * @param {object} options
++ * @param {string} [options.appContext]   - Compact app plan context from AppPlanner
++ * @param {string} [options.accentColor] - Suggested accent color
++ * @returns {string}
++ */
++export function buildAppSystemPrompt(options = {}) {
++  const componentTypes = getRegisteredAppComponentTypes();
++  const componentList  = componentTypes.join(', ');
++  const contextBlock   = options.appContext
++    ? `\n\nAPP PLAN CONTEXT (follow this closely):\n${options.appContext}`
++    : '';
++  const colorHint = options.accentColor
++    ? `\n- Use "${options.accentColor}" as the accentColor throughout.`
++    : '';
++
++  return `You are an expert app architect working inside Nuvra, an AI-powered web-app builder.
++
++Your task is to generate a complete data-driven application as a structured JSON object.
++
++REQUIRED OUTPUT FORMAT (TypeScript interface):
++interface AppGenerationResult {
++  appName: string;                    // Short app name, 2-4 words
++  description: string;                // One-sentence description
++  collections: AiCollectionSchema[];  // Data collections
++  pages: AppPageSchema[];             // App pages
++  settings: {
++    accentColor: string;              // Hex color, e.g. "#6366f1"
++    theme: "light" | "dark";
++  };
++}
++
++interface AiCollectionSchema {
++  id: string;          // URL-safe slug, e.g. "tasks"
++  name: string;        // Display name, e.g. "Tasks"
++  description?: string;
++  fields: AiFieldDef[];
++  seedData?: object[]; // 2-4 sample records
++}
++
++interface AiFieldDef {
++  id: string;          // Field slug, e.g. "due_date"
++  label: string;       // Display label, e.g. "Due Date"
++  type: "text" | "number" | "boolean" | "date" | "select" | "url" | "email";
++  required?: boolean;
++  options?: string[];  // Only for type "select"
++}
++
++interface AppPageSchema {
++  pageId: string;      // URL slug, e.g. "tasks"
++  pageName: string;    // Display name, e.g. "Tasks"
++  intent: "app";       // ALWAYS "app"
++  appType: "dashboard" | "crud" | "form" | "detail" | "settings";
++  title: string;
++  subtitle?: string;
++  layout: "full-width" | "sidebar-content" | "centered";
++  components: AppComponentSchema[];
++  settings?: { accentColor?: string; primaryCollection?: string; };
++}
++
++interface AppComponentSchema {
++  id: string;          // Unique instance ID, e.g. "tasks-table"
++  type: string;        // MUST be one of the registered types listed below
++  config: object;      // Component-specific configuration
++  actions?: ActionSchema[];
++}
++
++interface ActionSchema {
++  id: "submit" | "fetch" | "update" | "delete" | "navigate" | "set-state";
++  config: object;
++}
++
++REGISTERED APP COMPONENT TYPES (use ONLY these):
++${componentList}
++
++COMPONENT CONFIG REFERENCE:
++app-header:  { title: string, subtitle?: string, cta?: string }
++stat-row:    { stats: [{ label, value, trend?, direction: "up"|"down" }] }
++data-table:  { collectionId: string, heading: string, showSearch?: boolean, showAdd?: boolean }
++data-form:   { collectionId: string, mode: "create"|"update", title: string, submitLabel?: string }
++data-list:   { collectionId: string, heading: string, displayField?: string }
++stat-card:   { label: string, value: string|number, trend?: string, direction?: "up"|"down" }
++show-if:     { stateKey: string, value: string }
++
++ACTION CONFIG REFERENCE:
++submit:      { collection: string, mode: "create"|"update" }
++fetch:       { collection: string }
++delete:      { collection: string }
++navigate:    { targetPageId: string }
++set-state:   { stateKey: string, value: any }
++
++STRICT RULES:
++1. Respond ONLY with the JSON object. No markdown, no code fences, no explanation.
++2. Use realistic, contextually appropriate content and seed data (never Lorem Ipsum).
++3. Every data-table and data-form MUST reference a collectionId that exists in your collections array.
++4. Every page MUST have an app-header as its first component.
++5. CRUD pages should have both a data-table and a data-form.
++6. Dashboard pages should have a stat-row and a data-table.
++7. Do NOT invent new component types — use only the registered types listed above.${colorHint}${contextBlock}`;
++}
++
++/**
++ * Build the user message for an app generation request.
++ * @param {string} prompt
++ * @param {string} [appContext] - Optional compact plan context
++ * @returns {string}
++ */
++export function buildAppUserMessage(prompt, appContext) {
++  if (appContext) {
++    return `Generate a complete app for: "${prompt}"\n\nFollow the app plan context provided in the system prompt.`;
++  }
++  return `Generate a complete app for: "${prompt}"`;
++}
+diff --git a/src/core/app.js b/src/core/app.js
+index fd49a53..6d0619d 100644
+--- a/src/core/app.js
++++ b/src/core/app.js
+@@ -198,105 +198,164 @@ document.getElementById('btn-ai-settings').addEventListener('click', openAISetti
+ 
+ // ─── 8. AI Generation ─────────────────────────────────────────────────────────
+ 
+-document.getElementById('btn-generate-ai').addEventListener('click', async () => {
+-  const promptInput = document.getElementById('aiPrompt');
+-  const statusEl    = document.getElementById('aiStatus');
+-  const prompt      = promptInput.value.trim();
++// ─── 8a. Generate Mode Dropdown ───────────────────────────────────────────────
+ 
+-  if (!prompt) {
+-    showToast('Please describe the page you want to generate.', 'error');
+-    return;
+-  }
++/** Currently selected generation mode: 'page' | 'app' | 'site' */
++let _generateMode = 'page';
+ 
+-  const { pages } = getSnapshot();
+-  const id = slugify(prompt);
+-  if (pages[id]) {
+-    showToast(`A page with this name already exists. Try a different description.`, 'error');
+-    return;
+-  }
++(function _initGenerateModeDropdown() {
++  const modeBtn = document.getElementById('btn-generate-mode');
++  const menu    = document.getElementById('generate-mode-menu');
++  const mainBtn = document.getElementById('btn-generate-ai');
++  if (!modeBtn || !menu) return;
+ 
+-  const btn = document.getElementById('btn-generate-ai');
+-  btn.disabled     = true;
+-  btn.textContent  = 'Generating…';
+-  statusEl.textContent = 'AI is building your page…';
+-  statusEl.classList.add('visible');
+-
+-  try {
+-    const result = await generatePage(prompt);
+-    addGeneratedPage(id, result.name, result.html, result.css, result.schema ?? null);
+-    promptInput.value = '';
+-    showToast(`Page "${result.name}" generated successfully.`, 'success');
+-
+-    console.info(
+-      `[Nuvra AI] Generated via ${result.meta.provider}/${result.meta.model}` +
+-      (result.meta.tokens ? ` — ${result.meta.tokens} tokens` : '')
+-    );
+-  } catch (err) {
+-    console.error('[Nuvra AI] Generation failed:', err);
+-    showToast(`AI generation failed: ${err.message}`, 'error');
+-  } finally {
+-    btn.disabled    = false;
+-    btn.textContent = 'Generate Page';
+-    statusEl.classList.remove('visible');
+-  }
+-});
++  const MODE_LABELS = { page: 'Generate Page', app: 'Generate App', site: 'Generate Site' };
+ 
+-document.getElementById('aiPrompt').addEventListener('keydown', (e) => {
+-  if (e.key === 'Enter') document.getElementById('btn-generate-ai').click();
+-});
++  modeBtn.addEventListener('click', (e) => {
++    e.stopPropagation();
++    menu.style.display = menu.style.display !== 'none' ? 'none' : 'block';
++  });
++
++  document.addEventListener('click', () => { menu.style.display = 'none'; });
++  menu.addEventListener('click', (e) => e.stopPropagation());
++
++  menu.querySelectorAll('.nv-generate-menu-item').forEach((item) => {
++    item.addEventListener('click', () => {
++      const mode = item.dataset.mode;
++      _generateMode = mode;
++      menu.querySelectorAll('.nv-generate-menu-item').forEach((i) => i.classList.remove('active'));
++      item.classList.add('active');
++      mainBtn.textContent = MODE_LABELS[mode] || 'Generate';
++      menu.style.display = 'none';
++      const promptInput = document.getElementById('aiPrompt');
++      if (promptInput) {
++        promptInput.placeholder = mode === 'page' ? 'Describe a marketing page…'
++                                : mode === 'app'  ? 'Describe an app, dashboard, or tool…'
++                                :                  'Describe a full multi-page site…';
++      }
++    });
++  });
++})();
+ 
+-// ─── 9. AI Site Generation (multi-page) ──────────────────────────────────────
++// ─── 8b. Unified Generate Button ─────────────────────────────────────────────
+ 
+-document.getElementById('btn-generate-site').addEventListener('click', async () => {
++document.getElementById('btn-generate-ai').addEventListener('click', async () => {
+   const promptInput = document.getElementById('aiPrompt');
+   const statusEl    = document.getElementById('aiStatus');
+   const prompt      = promptInput.value.trim();
++  const btn         = document.getElementById('btn-generate-ai');
+ 
+   if (!prompt) {
+-    showToast('Please describe the site you want to generate.', 'error');
++    showToast('Please describe what you want to generate.', 'error');
+     return;
+   }
+ 
+-  const btn = document.getElementById('btn-generate-site');
+-  btn.disabled    = true;
+-  btn.textContent = 'Planning…';
+-  statusEl.textContent = 'AI is planning your site…';
+-  statusEl.classList.add('visible');
++  if (_generateMode === 'page') {
++    // ── Marketing Page ─────────────────────────────────────────────────────
++    const { pages } = getSnapshot();
++    const id = slugify(prompt);
++    if (pages[id]) {
++      showToast('A page with this name already exists.', 'error');
++      return;
++    }
++    btn.disabled = true; btn.textContent = 'Generating…';
++    statusEl.textContent = 'AI is building your page…'; statusEl.classList.add('visible');
++    try {
++      const result = await generatePage(prompt);
++      addGeneratedPage(id, result.name, result.html, result.css, result.schema ?? null);
++      promptInput.value = '';
++      showToast(`Page "${result.name}" generated.`, 'success');
++      console.info(`[Nuvra AI] Page via ${result.meta.provider}/${result.meta.model}`);
++    } catch (err) {
++      console.error('[Nuvra AI] Page failed:', err);
++      showToast(`Generation failed: ${err.message}`, 'error');
++    } finally {
++      btn.disabled = false; btn.textContent = 'Generate Page'; statusEl.classList.remove('visible');
++    }
++
++  } else if (_generateMode === 'app') {
++    // ── App Generation ─────────────────────────────────────────────────────
++    btn.disabled = true; btn.textContent = 'Planning…';
++    statusEl.textContent = 'AI is planning your app…'; statusEl.classList.add('visible');
++
++    const toast = document.createElement('div');
++    toast.className = 'nv-app-gen-toast';
++    toast.innerHTML = `
++      <div class="nv-app-gen-toast-title">Generating App…</div>
++      <div class="nv-app-gen-toast-step" id="nv-gen-step">Analysing prompt…</div>
++      <div class="nv-app-gen-toast-bar"><div class="nv-app-gen-toast-fill" id="nv-gen-fill" style="width:10%"></div></div>
++      <div class="nv-app-gen-toast-summary" id="nv-gen-summary"></div>`;
++    document.body.appendChild(toast);
++
++    const setStep = (label, pct) => {
++      const s = document.getElementById('nv-gen-step');
++      const f = document.getElementById('nv-gen-fill');
++      if (s) s.textContent = label;
++      if (f) f.style.width = `${pct}%`;
++    };
+ 
+-  try {
+-    const pages = await generateSite(prompt);
+-    statusEl.textContent = `Generating ${pages.length} page${pages.length > 1 ? 's' : ''}…`;
++    try {
++      setStep('Analysing prompt…', 20);
++      await new Promise((r) => setTimeout(r, 80));
++      setStep('Building data model…', 45);
++      const output = await generateApp(prompt);
++      setStep('Rendering pages…', 80);
++      await new Promise((r) => setTimeout(r, 60));
++
++      for (const page of output.pages) {
++        const { pages: existing } = getSnapshot();
++        let id = page.pageId;
++        if (existing[id]) id = `${id}-${Date.now().toString(36)}`;
++        addGeneratedPage(id, page.pageName, page.html, page.css, page.appSchema ?? null, 'dashboard');
++      }
+ 
+-    let firstPageId = null;
+-    for (const page of pages) {
+-      const { pages: existingPages } = getSnapshot();
+-      let id = page.pageId;
+-      if (existingPages[id]) id = `${id}-${Date.now().toString(36)}`;
++      setStep('Done!', 100);
++      const summaryEl = document.getElementById('nv-gen-summary');
++      if (summaryEl) summaryEl.textContent = `"${output.appName}" — ${output.collectionIds.length} collection(s), ${output.pages.length} page(s) via ${output.meta.provider}/${output.meta.model}`;
+ 
+-      addGeneratedPage(id, page.pageName, page.html, page.css, page.schema ?? null);
+-      if (!firstPageId) firstPageId = id;
++      promptInput.value = '';
++      showToast(`App "${output.appName}" generated: ${output.pages.length} page(s).`, 'success');
++      const appTab = document.querySelector('[data-panel="app-components-panel"]');
++      if (appTab) appTab.click();
++      _renderCollectionsList();
++      console.info(`[Nuvra AI] App "${output.appName}" — ${output.collectionIds.length} collections, ${output.pages.length} pages via ${output.meta.provider}/${output.meta.model}`);
++    } catch (err) {
++      console.error('[Nuvra AI] App failed:', err);
++      showToast(`App generation failed: ${err.message}`, 'error');
++    } finally {
++      btn.disabled = false; btn.textContent = 'Generate App'; statusEl.classList.remove('visible');
++      setTimeout(() => toast.remove(), 3500);
+     }
+ 
+-    promptInput.value = '';
+-    showToast(
+-      `Site generated: ${pages.length} page${pages.length > 1 ? 's' : ''} created.`,
+-      'success'
+-    );
+-
+-    console.info(
+-      `[Nuvra AI] Site generated — ${pages.length} pages via ` +
+-      `${pages[0]?.meta?.provider ?? 'mock'}/${pages[0]?.meta?.model ?? 'unknown'}`
+-    );
+-  } catch (err) {
+-    console.error('[Nuvra AI] Site generation failed:', err);
+-    showToast(`Site generation failed: ${err.message}`, 'error');
+-  } finally {
+-    btn.disabled    = false;
+-    btn.textContent = 'Generate Site';
+-    statusEl.classList.remove('visible');
++  } else if (_generateMode === 'site') {
++    // ── Full Site Generation ────────────────────────────────────────────────
++    btn.disabled = true; btn.textContent = 'Planning…';
++    statusEl.textContent = 'AI is planning your site…'; statusEl.classList.add('visible');
++    try {
++      const pages = await generateSite(prompt);
++      statusEl.textContent = `Generating ${pages.length} page(s)…`;
++      for (const page of pages) {
++        const { pages: existing } = getSnapshot();
++        let id = page.pageId;
++        if (existing[id]) id = `${id}-${Date.now().toString(36)}`;
++        addGeneratedPage(id, page.pageName, page.html, page.css, page.schema ?? null);
++      }
++      promptInput.value = '';
++      showToast(`Site generated: ${pages.length} page(s) created.`, 'success');
++      console.info(`[Nuvra AI] Site — ${pages.length} pages via ${pages[0]?.meta?.provider ?? 'mock'}`);
++    } catch (err) {
++      console.error('[Nuvra AI] Site failed:', err);
++      showToast(`Site generation failed: ${err.message}`, 'error');
++    } finally {
++      btn.disabled = false; btn.textContent = 'Generate Site'; statusEl.classList.remove('visible');
++    }
+   }
+ });
+ 
++document.getElementById('aiPrompt').addEventListener('keydown', (e) => {
++  if (e.key === 'Enter') document.getElementById('btn-generate-ai').click();
++});
++
+ // ─── 10. Sidebar tab switching ────────────────────────────────────────────────
+ 
+ document.querySelectorAll('.sidebar-tab').forEach((tab) => {
+diff --git a/src/ui/styles.css b/src/ui/styles.css
+index 31daf56..3641f0e 100644
+--- a/src/ui/styles.css
++++ b/src/ui/styles.css
+@@ -1433,3 +1433,153 @@ body, html {
+   border-radius: 4px;
+   margin-left: auto;
+ }
++
++/* ============================================================
++   PHASE 5B — Generate Mode Dropdown & App Generation Toast
++   ============================================================ */
++
++/* ----- Generate Group (split button) ----- */
++.nv-generate-group {
++  position: relative;
++  display: flex;
++  align-items: center;
++  gap: 0;
++  flex-shrink: 0;
++}
++
++.nv-generate-group #btn-generate-ai {
++  border-radius: 6px 0 0 6px;
++  border-right: 1px solid rgba(255,255,255,0.15);
++}
++
++.nv-generate-mode-btn {
++  border-radius: 0 6px 6px 0 !important;
++  padding: 0 8px !important;
++  font-size: 10px !important;
++  min-width: 22px;
++}
++
++/* ----- Generate Mode Dropdown Menu ----- */
++.nv-generate-menu {
++  position: absolute;
++  top: calc(100% + 6px);
++  left: 0;
++  min-width: 240px;
++  background: #1e1e2e;
++  border: 1px solid #3a3a4e;
++  border-radius: 8px;
++  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
++  z-index: 9999;
++  overflow: hidden;
++}
++
++.nv-generate-menu-item {
++  display: grid;
++  grid-template-columns: 26px 1fr;
++  grid-template-rows: auto auto;
++  column-gap: 10px;
++  row-gap: 1px;
++  padding: 10px 14px;
++  background: none;
++  border: none;
++  border-bottom: 1px solid #2a2a3e;
++  cursor: pointer;
++  text-align: left;
++  width: 100%;
++  color: #e2e8f0;
++  transition: background .12s;
++}
++
++.nv-generate-menu-item:last-child {
++  border-bottom: none;
++}
++
++.nv-generate-menu-item:hover,
++.nv-generate-menu-item.active {
++  background: rgba(124, 106, 247, 0.15);
++}
++
++.nv-generate-menu-item.active .nv-menu-label {
++  color: #a78bfa;
++}
++
++.nv-menu-icon {
++  grid-row: 1 / 3;
++  grid-column: 1;
++  display: flex;
++  align-items: center;
++  justify-content: center;
++  font-size: 15px;
++  color: #7c6af7;
++  align-self: center;
++}
++
++.nv-menu-label {
++  grid-row: 1;
++  grid-column: 2;
++  font-size: 13px;
++  font-weight: 600;
++  color: #e2e8f0;
++}
++
++.nv-menu-desc {
++  grid-row: 2;
++  grid-column: 2;
++  font-size: 11px;
++  color: #6b7280;
++}
++
++/* ----- App Generation Progress Toast ----- */
++.nv-app-gen-toast {
++  position: fixed;
++  bottom: 24px;
++  left: 50%;
++  transform: translateX(-50%);
++  background: #1e1e2e;
++  border: 1px solid #3a3a4e;
++  border-radius: 10px;
++  padding: 14px 20px;
++  min-width: 320px;
++  max-width: 480px;
++  box-shadow: 0 8px 32px rgba(0,0,0,0.45);
++  z-index: 9999;
++  display: flex;
++  flex-direction: column;
++  gap: 8px;
++  animation: nv-toast-in .2s ease;
++}
++
++@keyframes nv-toast-in {
++  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
++  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
++}
++
++.nv-app-gen-toast-title {
++  font-size: 13px;
++  font-weight: 600;
++  color: #e2e8f0;
++}
++
++.nv-app-gen-toast-step {
++  font-size: 12px;
++  color: #9ca3af;
++}
++
++.nv-app-gen-toast-bar {
++  height: 3px;
++  background: #3a3a4e;
++  border-radius: 2px;
++  overflow: hidden;
++}
++
++.nv-app-gen-toast-fill {
++  height: 100%;
++  background: linear-gradient(90deg, #7c6af7, #a78bfa);
++  border-radius: 2px;
++  transition: width .3s ease;
++}
++
++.nv-app-gen-toast-summary {
++  font-size: 11px;
++  color: #6b7280;
++}

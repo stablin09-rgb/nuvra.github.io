@@ -1,0 +1,205 @@
+diff a/src/ai/aiEngine.js b/src/ai/aiEngine.js	(rejected hunks)
+@@ -53,6 +53,13 @@ import { ProviderBase, sessionBudget }    from './providerBase.js';
+ import { OpenAIProvider }                 from './providers/openaiProvider.js';
+ import { AnthropicProvider }              from './providers/anthropicProvider.js';
+ import { LocalProvider }                  from './providers/localProvider.js';
++import { analyseAppPrompt, planApp }      from './appPlanner.js';
++import { validateAppGenerationResult,
++         createDefaultAppResult }         from './appSchema.js';
++import { registerAiCollections,
++         renderAppPageSchema }            from './appSchemaRenderer.js';
++import { buildAppSystemPrompt,
++         buildAppUserMessage }            from './promptBuilder.js';
+ 
+ // ─── Mock Provider ────────────────────────────────────────────────────────────
+ 
+@@ -80,6 +87,76 @@ class MockProvider extends ProviderBase {
+     return mockGenerateSite(prompt, options);
+   }
+ 
++  /**
++   * Mock app generation: uses the AppPlanner to build a realistic result
++   * without any API call.
++   */
++  async _generateApp(prompt, options = {}) {
++    const { analyseAppPrompt: analyse, planApp: plan, getAppBlueprint } =
++      await import('./appPlanner.js');
++    const intent    = analyse(prompt);
++    const appPlan   = plan(intent);
++    const blueprint = getAppBlueprint(intent.appType);
++
++    // Build the AppGenerationResult from the blueprint
++    const appName = intent.appName;
++    const accent  = options.accentColor || intent.accentColor || '#7c6af7';
++
++    // Deep-clone collections from blueprint and personalise
++    const collections = blueprint.collections.map((col) => ({
++      ...col,
++      id:   col.id,
++      name: col.name,
++    }));
++
++    // Build pages from the plan
++    const pages = appPlan.pages.map((pagePlan) => {
++      const components = pagePlan.components.map((compType, idx) => {
++        const primaryCol = collections[0]?.id || 'items';
++        const configs = {
++          'app-header':  { title: appName, subtitle: `Manage your ${appName.toLowerCase()} data` },
++          'stat-row':    { stats: [
++            { label: 'Total',    value: '—', trend: '',   direction: 'up' },
++            { label: 'Active',   value: '—', trend: '+5', direction: 'up' },
++            { label: 'Pending',  value: '—', trend: '',   direction: 'down' },
++            { label: 'Done',     value: '—', trend: '+2', direction: 'up' },
++          ]},
++          'data-table':  { collectionId: primaryCol, heading: collections[0]?.name || 'Records', showSearch: true, showAdd: true },
++          'data-form':   { collectionId: primaryCol, mode: 'create', title: `Add ${collections[0]?.name?.replace(/s$/, '') || 'Record'}`, submitLabel: 'Save' },
++          'data-list':   { collectionId: primaryCol, heading: collections[0]?.name || 'Records', displayField: 'title' },
++        };
++        return {
++          id:     `${compType}-${idx}`,
++          type:   compType,
++          config: configs[compType] || {},
++          actions: compType === 'data-table' ? [{ id: 'fetch', config: { collection: primaryCol } }]
++                 : compType === 'data-form'  ? [{ id: 'submit', config: { collection: primaryCol, mode: 'create' } }]
++                 : [],
++        };
++      });
++
++      return {
++        pageId:     pagePlan.pageId,
++        pageName:   pagePlan.pageName,
++        intent:     'app',
++        appType:    pagePlan.appType,
++        title:      pagePlan.pageName,
++        layout:     pagePlan.layout || 'full-width',
++        components,
++        settings:   { accentColor: accent, primaryCollection: collections[0]?.id },
++      };
++    });
++
++    return {
++      appName,
++      description: `A ${blueprint.label} built with Nuvra.`,
++      collections,
++      pages,
++      settings: { accentColor: accent, theme: 'light' },
++      _meta: { provider: 'mock', model: 'mock-v2', tokens: 0 },
++    };
++  }
++
+   // _callAPI is not used by MockProvider
+   async _callAPI() {
+     throw new Error('MockProvider does not use _callAPI.');
+@@ -203,6 +280,112 @@ export async function generateSite(prompt, options = {}) {
+   });
+ }
+ 
++/**
++ * Generate a full data-driven application from a natural-language prompt.
++ *
++ * Pipeline:
++ *   prompt → analyseAppPrompt → planApp → provider._generateApp → registerAiCollections → renderAppPageSchema
++ *
++ * @typedef {object} AppPageGenerationResult
++ * @property {string} pageId    - URL slug for the page
++ * @property {string} pageName  - Display name
++ * @property {string} html      - Rendered HTML for GrapesJS
++ * @property {string} css       - Rendered CSS for GrapesJS
++ * @property {object} appSchema - The raw AppPageSchema
++ * @property {'app'}  intent    - Always 'app'
++ * @property {object} meta      - { provider, model, tokens }
++ *
++ * @typedef {object} AppGenerationOutput
++ * @property {string}                   appName
++ * @property {string[]}                 collectionIds  - IDs of registered collections
++ * @property {AppPageGenerationResult[]} pages
++ * @property {object}                   meta
++ *
++ * @param {string} prompt
++ * @param {object} [options]
++ * @param {string} [options.accentColor]
++ * @returns {Promise<AppGenerationOutput>}
++ */
++export async function generateApp(prompt, options = {}) {
++  if (!_activeProvider) {
++    console.warn('[Nuvra AI] No provider configured — defaulting to mock.');
++    _activeProvider = new MockProvider({});
++  }
++
++  // ── Step 1: Analyse prompt and build a plan ──────────────────────────────
++  const intent  = analyseAppPrompt(prompt);
++  const appPlan = planApp(intent);
++
++  const accentColor = options.accentColor || intent.accentColor || '#7c6af7';
++
++  // ── Step 2: Call provider to get AppGenerationResult ────────────────────
++  let appResult;
++
++  if (_activeProvider.id === 'mock') {
++    // Mock provider has a dedicated _generateApp method
++    appResult = await _activeProvider._generateApp(prompt, { ...options, accentColor });
++  } else {
++    // Real providers: use the app system prompt and parse the response
++    const systemPrompt = buildAppSystemPrompt({
++      appContext:   appPlan.systemPromptContext,
++      accentColor,
++    });
++    const userMessage  = buildAppUserMessage(prompt, appPlan.systemPromptContext);
++
++    // Use the provider's raw _callAPI to get the structured response
++    const raw = await _activeProvider._callAPI(systemPrompt, userMessage, {
++      maxOutputTokens: 4096,
++    });
++
++    try {
++      appResult = JSON.parse(raw.content);
++    } catch (e) {
++      console.error('[Nuvra AI] App generation: JSON parse failed. Falling back to mock.', e);
++      appResult = createDefaultAppResult(intent.appName);
++    }
++
++    // Validate and repair if needed
++    const validation = validateAppGenerationResult(appResult);
++    if (!validation.valid) {
++      console.warn('[Nuvra AI] App result validation errors:', validation.errors);
++      if (!appResult.collections || !appResult.pages) {
++        appResult = createDefaultAppResult(intent.appName);
++      }
++    }
++  }
++
++  // ── Step 3: Register collections into the DataStore ─────────────────────
++  const collectionIds = registerAiCollections(appResult.collections || []);
++
++  // ── Step 4: Render each app page to HTML/CSS ─────────────────────────────
++  const meta = appResult._meta || { provider: _activeProvider.id, model: _activeProvider.model || 'unknown', tokens: 0 };
++
++  const pages = (appResult.pages || []).map((pageSchema) => {
++    const { html, css } = renderAppPageSchema(pageSchema);
++    return {
++      pageId:    pageSchema.pageId,
++      pageName:  pageSchema.pageName,
++      html,
++      css,
++      appSchema: pageSchema,
++      intent:    'app',
++      meta,
++    };
++  });
++
++  console.info(
++    `[Nuvra AI] App generated: "${appResult.appName}" — ` +
++    `${collectionIds.length} collection(s), ${pages.length} page(s) via ${meta.provider}/${meta.model}`
++  );
++
++  return {
++    appName:       appResult.appName,
++    collectionIds,
++    pages,
++    meta,
++  };
++}
++
+ /**
+  * Return the name of the currently active provider.
+  * @returns {string}

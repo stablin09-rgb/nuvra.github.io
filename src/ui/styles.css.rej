@@ -1,0 +1,155 @@
+diff a/src/ui/styles.css b/src/ui/styles.css	(rejected hunks)
+@@ -1433,3 +1433,153 @@ body, html {
+   border-radius: 4px;
+   margin-left: auto;
+ }
++
++/* ============================================================
++   PHASE 5B — Generate Mode Dropdown & App Generation Toast
++   ============================================================ */
++
++/* ----- Generate Group (split button) ----- */
++.nv-generate-group {
++  position: relative;
++  display: flex;
++  align-items: center;
++  gap: 0;
++  flex-shrink: 0;
++}
++
++.nv-generate-group #btn-generate-ai {
++  border-radius: 6px 0 0 6px;
++  border-right: 1px solid rgba(255,255,255,0.15);
++}
++
++.nv-generate-mode-btn {
++  border-radius: 0 6px 6px 0 !important;
++  padding: 0 8px !important;
++  font-size: 10px !important;
++  min-width: 22px;
++}
++
++/* ----- Generate Mode Dropdown Menu ----- */
++.nv-generate-menu {
++  position: absolute;
++  top: calc(100% + 6px);
++  left: 0;
++  min-width: 240px;
++  background: #1e1e2e;
++  border: 1px solid #3a3a4e;
++  border-radius: 8px;
++  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
++  z-index: 9999;
++  overflow: hidden;
++}
++
++.nv-generate-menu-item {
++  display: grid;
++  grid-template-columns: 26px 1fr;
++  grid-template-rows: auto auto;
++  column-gap: 10px;
++  row-gap: 1px;
++  padding: 10px 14px;
++  background: none;
++  border: none;
++  border-bottom: 1px solid #2a2a3e;
++  cursor: pointer;
++  text-align: left;
++  width: 100%;
++  color: #e2e8f0;
++  transition: background .12s;
++}
++
++.nv-generate-menu-item:last-child {
++  border-bottom: none;
++}
++
++.nv-generate-menu-item:hover,
++.nv-generate-menu-item.active {
++  background: rgba(124, 106, 247, 0.15);
++}
++
++.nv-generate-menu-item.active .nv-menu-label {
++  color: #a78bfa;
++}
++
++.nv-menu-icon {
++  grid-row: 1 / 3;
++  grid-column: 1;
++  display: flex;
++  align-items: center;
++  justify-content: center;
++  font-size: 15px;
++  color: #7c6af7;
++  align-self: center;
++}
++
++.nv-menu-label {
++  grid-row: 1;
++  grid-column: 2;
++  font-size: 13px;
++  font-weight: 600;
++  color: #e2e8f0;
++}
++
++.nv-menu-desc {
++  grid-row: 2;
++  grid-column: 2;
++  font-size: 11px;
++  color: #6b7280;
++}
++
++/* ----- App Generation Progress Toast ----- */
++.nv-app-gen-toast {
++  position: fixed;
++  bottom: 24px;
++  left: 50%;
++  transform: translateX(-50%);
++  background: #1e1e2e;
++  border: 1px solid #3a3a4e;
++  border-radius: 10px;
++  padding: 14px 20px;
++  min-width: 320px;
++  max-width: 480px;
++  box-shadow: 0 8px 32px rgba(0,0,0,0.45);
++  z-index: 9999;
++  display: flex;
++  flex-direction: column;
++  gap: 8px;
++  animation: nv-toast-in .2s ease;
++}
++
++@keyframes nv-toast-in {
++  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
++  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
++}
++
++.nv-app-gen-toast-title {
++  font-size: 13px;
++  font-weight: 600;
++  color: #e2e8f0;
++}
++
++.nv-app-gen-toast-step {
++  font-size: 12px;
++  color: #9ca3af;
++}
++
++.nv-app-gen-toast-bar {
++  height: 3px;
++  background: #3a3a4e;
++  border-radius: 2px;
++  overflow: hidden;
++}
++
++.nv-app-gen-toast-fill {
++  height: 100%;
++  background: linear-gradient(90deg, #7c6af7, #a78bfa);
++  border-radius: 2px;
++  transition: width .3s ease;
++}
++
++.nv-app-gen-toast-summary {
++  font-size: 11px;
++  color: #6b7280;
++}
