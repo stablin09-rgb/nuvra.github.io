@@ -70,6 +70,12 @@ export const toolbar = {
 
         <div class="nv-divider"></div>
 
+        <!-- AI Actions -->
+        <button class="nv-btn nv-btn-primary" data-action="ai-generate" title="Generate with AI">Generate</button>
+        <button class="nv-btn" data-action="toggle-planning-panel" title="Toggle Planning Panel">Planning</button>
+
+        <div class="nv-divider"></div>
+
         <!-- Device Mode -->
         <div class="nv-device-group" role="group" aria-label="Device mode">
           <button class="nv-btn nv-device-btn ${deviceMode === 'desktop' ? 'active' : ''}"
@@ -151,6 +157,10 @@ export const toolbar = {
         store.dispatch({ type: 'EDITOR/SET_ZOOM', payload: 1 }); break;
       case 'save':
         eventBus.emit('editor:save_requested', {}); break;
+      case 'ai-generate':
+        eventBus.emit('ai:generate_requested', {}); break;
+      case 'toggle-planning-panel':
+        store.dispatch({ type: 'UI/TOGGLE_PANEL', payload: 'planning' }); break;
     }
   },
 

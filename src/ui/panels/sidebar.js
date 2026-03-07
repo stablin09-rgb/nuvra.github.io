@@ -16,6 +16,8 @@ const PANELS = [
   { id: 'blocks', label: 'Blocks' },
   { id: 'style',  label: 'Style'  },
   { id: 'layers', label: 'Layers' },
+  { id: 'marketplace', label: 'Marketplace' },
+  { id: 'mobile', label: 'Mobile' },
 ];
 
 export const sidebar = {

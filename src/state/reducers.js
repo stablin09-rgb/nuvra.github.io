@@ -111,7 +111,7 @@ export function pagesReducer(state = PAGES_INITIAL, action) {
 // ─── UI Reducer ───────────────────────────────────────────────────────────────
 const UI_INITIAL = {
   modals:       {},   // { [modalId]: boolean }
-  panels:       {},   // { [panelId]: boolean }
+  panels:       { planning: false, marketplace: false, mobile: false },   // { [panelId]: boolean }
   notifications: [],  // { id, type, message, ts }
   loading:      {},   // { [key]: boolean }
   theme:        'dark',

@@ -31,6 +31,8 @@ import { sidebar }        from './panels/sidebar.js';
 import { canvas }         from './panels/canvas.js';
 import { toastManager }   from './controls/toast.js';
 import { planningPanel }  from './panels/planningPanel.js';
+import { marketplaceCatalog } from './panels/marketplaceCatalog.js';
+import { mobileReadinessDashboard } from './panels/mobileReadinessDashboard.js';
 
 // ─── EditorShell Module ───────────────────────────────────────────────────────
 export const editorShell = {
@@ -66,7 +68,9 @@ export const editorShell = {
     sidebar.mount(document.getElementById('nv-sidebar'));
     canvas.mount(document.getElementById('nv-canvas'));
     toastManager.mount(document.getElementById('nv-toasts'));
-    planningPanel.mount(document.getElementById('nv-planning-panel'));
+    planningPanel.mount(document.getElementById("nv-planning-panel"));
+    marketplaceCatalog.mount(document.getElementById("nv-marketplace-panel"));
+    mobileReadinessDashboard.mount(document.getElementById("nv-mobile-panel"));
 
     // Subscribe to store — update UI on state changes
     this._unsubscribe = store.subscribe((newState, prevState) => {
@@ -103,6 +107,8 @@ export const editorShell = {
     canvas.unmount();
     toastManager.unmount();
     planningPanel.unmount();
+    marketplaceCatalog.unmount();
+    mobileReadinessDashboard.unmount();
     if (this._rootEl) this._rootEl.innerHTML = '';
   },
 
@@ -114,6 +120,8 @@ export const editorShell = {
         <div id="nv-sidebar"         class="nv-sidebar"></div>
         <div id="nv-canvas"          class="nv-canvas"></div>
         <div id="nv-planning-panel"  class="nv-planning-panel-container nv-panel-hidden"></div>
+        <div id="nv-marketplace-panel" class="nv-marketplace-panel-container nv-panel-hidden"></div>
+        <div id="nv-mobile-panel"      class="nv-mobile-panel-container nv-panel-hidden"></div>
       </div>
       <div id="nv-toasts"   class="nv-toasts"></div>
     `;
@@ -126,6 +134,8 @@ export const editorShell = {
       sidebar.render(state);
       canvas.render(state);
       this._renderPlanningPanel(state);
+      this._renderMarketplaceCatalog(state);
+      this._renderMobileReadinessDashboard(state);
     } catch (err) {
       errorBoundary.capture(err, {
         module:   'editorShell',
@@ -167,8 +177,26 @@ export const editorShell = {
     }
     if (panelChanged || aiChanged) {
       this._renderPlanningPanel(newState);
+      this._renderMarketplaceCatalog(newState);
+      this._renderMobileReadinessDashboard(newState);
     }
   },
 };
 
 export default editorShell;
+
+  _renderMarketplaceCatalog(state) {
+    const panelEl = document.getElementById('nv-marketplace-panel');
+    if (!panelEl) return;
+    const isOpen = state.ui?.panels?.['marketplace'] || false;
+    panelEl.classList.toggle('nv-panel-hidden', !isOpen);
+    if (isOpen) marketplaceCatalog.render();
+  },
+
+  _renderMobileReadinessDashboard(state) {
+    const panelEl = document.getElementById('nv-mobile-panel');
+    if (!panelEl) return;
+    const isOpen = state.ui?.panels?.['mobile'] || false;
+    panelEl.classList.toggle('nv-panel-hidden', !isOpen);
+    if (isOpen) mobileReadinessDashboard.render();
+  },
