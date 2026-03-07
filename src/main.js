@@ -30,7 +30,7 @@ import { AppRuntime }     from './app/runtime/appRuntime.js';
 import { providerRegistry }   from './ai/providers/providerRegistry.js';
 import { OpenAIProvider }     from './ai/providers/openAIProvider.js';
 import { AnthropicProvider }  from './ai/providers/anthropicProvider.js';
-import { budgetEngine }       from './ai/budget/budgetEngine.js';
+import { budgetEngine, LimitType } from './ai/budget/budgetEngine.js';
 import { aiGenerationEngine } from './ai/generation/aiGenerationEngine.js';
 
 // ─── Phase 6: Cloud, Auth, Governance ────────────────────────────────────────
@@ -209,21 +209,9 @@ async function boot() {
 
   // ── Step 7: Initialize Auth Manager ────────────────────────────────────────
   let authManager = null;
-  await _try('Auth Manager', async () => {
-    const supabaseUrl = _getEnvVar('SUPABASE_URL') || null;
-    const supabaseKey = _getEnvVar('SUPABASE_KEY') || null;
-    let authProvider;
-    if (supabaseUrl && supabaseKey) {
-      try {
-        const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
-        const supabaseClient = createClient(supabaseUrl, supabaseKey);
-        authProvider = new SupabaseAuthProvider({ client: supabaseClient });
-      } catch {
-        authProvider = new LocalAuthProvider();
-      }
-    } else {
-      authProvider = new LocalAuthProvider();
-    }
+  _try('Auth Manager', () => {
+    // Use LocalAuthProvider in the browser (no server-side env vars available at runtime)
+    const authProvider = new LocalAuthProvider();
     authManager = new AuthManager({
       provider: authProvider,
       store,
@@ -231,7 +219,7 @@ async function boot() {
       tokenManager:   { store: () => {}, retrieve: () => null, clear: () => {} },
       sessionManager: { create: () => {}, restore: () => null, clear: () => {} },
     });
-    await authManager.restoreSession();
+    // Session restore is triggered internally in the constructor via this._restoreSession()
     logger.info('main', 'Auth Manager initialized');
   });
 
@@ -503,7 +491,16 @@ async function boot() {
   _try('upgradeEngine.wireEvents', () => upgradeEngine?.wireEvents());
   _try('enterpriseBilling.wireEvents', () => enterpriseBilling?.wireEvents());
 
-  // ── Step 37: Mark as booted ────────────────────────────────────────────────
+  // ── Step 37: Start the Editor Shell (renders the UI, clears loading screen) ─
+  const appEl = document.getElementById('nv-app');
+  if (appEl) {
+    editorShell.start(appEl);
+    logger.info('main', 'Editor shell started');
+  } else {
+    logger.error('main', 'Could not find #nv-app element — editor shell not started');
+  }
+
+  // ── Step 38: Mark as booted ────────────────────────────────────────────────
   store.dispatch({ type: 'APP/SET_BOOTED', payload: true });
   logger.info('main', 'Nuvra booted (Phase 10).');
 
