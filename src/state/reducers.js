@@ -318,6 +318,47 @@ export function runtimeErrorsReducer(state = RUNTIME_ERRORS_INITIAL, action) {
   }
 }
 
+// ─── AI Generation Reducer (Phase 5) ────────────────────────────────────────
+// Tracks the full Phase 5 AI generation pipeline state.
+const AI_GEN_INITIAL = {
+  generationStage:  'idle',    // GenerationStage
+  generationRunId:  null,      // Current run ID
+  generationError:  null,      // Last error message
+  intent:           null,      // IntentSchema from Step 1
+  plan:             null,      // SystemPlan from Step 2
+  generatedSchema:  null,      // Assembled AppSchema from Step 3
+  activeProviderId: 'openai',  // Currently active provider
+  budgetSummary:    null,      // BudgetEngine session summary
+  securityThreats:  [],        // Recent security scan threats
+};
+
+export function aiGenerationReducer(state = AI_GEN_INITIAL, action) {
+  switch (action.type) {
+    case 'AI/SET_GENERATION_STAGE':
+      return { ...state, generationStage: action.payload, generationError: null };
+    case 'AI/SET_GENERATION_RUN_ID':
+      return { ...state, generationRunId: action.payload };
+    case 'AI/SET_GENERATION_ERROR':
+      return { ...state, generationStage: 'failed', generationError: action.payload };
+    case 'AI/SET_INTENT':
+      return { ...state, intent: action.payload };
+    case 'AI/SET_PLAN':
+      return { ...state, plan: action.payload };
+    case 'AI/SET_SCHEMA':
+      return { ...state, generatedSchema: action.payload };
+    case 'AI/SET_ACTIVE_PROVIDER':
+      return { ...state, activeProviderId: action.payload };
+    case 'AI/SET_BUDGET_SUMMARY':
+      return { ...state, budgetSummary: action.payload };
+    case 'AI/ADD_SECURITY_THREAT':
+      return { ...state, securityThreats: [...state.securityThreats.slice(-19), action.payload] };
+    case 'AI/CLEAR_GENERATION':
+      return { ...AI_GEN_INITIAL, activeProviderId: state.activeProviderId, budgetSummary: state.budgetSummary };
+    default:
+      return state;
+  }
+}
+
 // ─── Root Reducer ─────────────────────────────────────────────────────────────
 /**
  * Combines all slice reducers into a single root reducer.
@@ -327,14 +368,15 @@ export function runtimeErrorsReducer(state = RUNTIME_ERRORS_INITIAL, action) {
  */
 export function rootReducer(state = {}, action) {
   return {
-    editor:        editorReducer(state.editor,        action),
-    pages:         pagesReducer(state.pages,          action),
-    ui:            uiReducer(state.ui,                action),
-    flags:         flagsReducer(state.flags,          action),
-    ai:            aiReducer(state.ai,                action),
-    app:           appReducer(state.app,              action),
-    preview:       previewReducer(state.preview,      action),
-    publish:       publishReducer(state.publish,      action),
+    editor:        editorReducer(state.editor,              action),
+    pages:         pagesReducer(state.pages,                action),
+    ui:            uiReducer(state.ui,                      action),
+    flags:         flagsReducer(state.flags,                action),
+    ai:            aiReducer(state.ai,                      action),
+    aiGeneration:  aiGenerationReducer(state.aiGeneration,  action),
+    app:           appReducer(state.app,                    action),
+    preview:       previewReducer(state.preview,            action),
+    publish:       publishReducer(state.publish,            action),
     runtimeErrors: runtimeErrorsReducer(state.runtimeErrors, action),
   };
 }
