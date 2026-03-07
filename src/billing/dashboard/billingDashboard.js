@@ -21,7 +21,6 @@
 import { UsageLedger } from '../ledger/usageLedger.js';
 import { Dimension } from '../ledger/usageDimensions.js';
 import { getPlan, getAllPlans, isUpgrade } from '../plans/planDefinitions.js';
-import { getDimensionMeta } from '../ledger/usageDimensions.js';
 class BillingDashboard {
   /**
    * @param {object} options

@@ -25,7 +25,6 @@
 // ─── Ledger Class ─────────────────────────────────────────────────────────────
 
 import { createEntry, getDimensionMeta, Dimension } from './usageDimensions.js';
-import { getAllDimensions } from './usageDimensions.js';
 class UsageLedger {
   /**
    * @param {object} options

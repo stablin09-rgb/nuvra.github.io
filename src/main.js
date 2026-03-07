@@ -32,7 +32,6 @@ import { OpenAIProvider }     from './ai/providers/openAIProvider.js';
 import { AnthropicProvider }  from './ai/providers/anthropicProvider.js';
 import { budgetEngine }       from './ai/budget/budgetEngine.js';
 import { aiGenerationEngine } from './ai/generation/aiGenerationEngine.js';
-import { LimitType }          from './ai/budget/budgetEngine.js';
 
 // ─── Phase 6: Cloud, Auth, Governance ────────────────────────────────────────
 import { SecretsManager }     from './governance/secretsManager.js';

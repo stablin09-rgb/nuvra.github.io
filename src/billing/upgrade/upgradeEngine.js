@@ -20,8 +20,6 @@
 
 import { getPlan, isUpgrade, getEntitlement } from '../plans/planDefinitions.js';
 import { Dimension, getAllDimensions } from '../ledger/usageDimensions.js';
-import { UsageLedger } from '../ledger/usageLedger.js';
-import { getAllDimensions } from '../ledger/usageDimensions.js';
 const TransitionType = Object.freeze({
   UPGRADE:   'upgrade',
   DOWNGRADE: 'downgrade',
