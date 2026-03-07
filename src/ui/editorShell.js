@@ -69,14 +69,18 @@ export const editorShell = {
     canvas.mount(document.getElementById('nv-canvas'));
     toastManager.mount(document.getElementById('nv-toasts'));
     
-    // Mount extra panels (Phase 2, 8, 9)
-    planningPanel.mount(document.getElementById("nv-planning-panel"));
-    
-    const marketplaceEl = document.getElementById("nv-marketplace-panel");
-    if (marketplaceEl) marketplaceCatalog.mount(marketplaceEl);
-    
-    const mobileEl = document.getElementById("nv-mobile-panel");
-    if (mobileEl) mobileReadinessDashboard.mount(mobileEl);
+    // Mount extra panels (Phase 2, 8, 9) — wrapped in try/catch so optional panels
+    // never crash the core editor shell
+    try { planningPanel.mount(document.getElementById('nv-planning-panel')); }
+    catch(e) { console.warn('[Nuvra] planningPanel mount failed:', e.message); }
+    try {
+      const marketplaceEl = document.getElementById('nv-marketplace-panel');
+      if (marketplaceEl) marketplaceCatalog.mount(marketplaceEl);
+    } catch(e) { console.warn('[Nuvra] marketplaceCatalog mount failed:', e.message); }
+    try {
+      const mobileEl = document.getElementById('nv-mobile-panel');
+      if (mobileEl) mobileReadinessDashboard.mount(mobileEl);
+    } catch(e) { console.warn('[Nuvra] mobileReadinessDashboard mount failed:', e.message); }
 
     // Subscribe to store — update UI on state changes
     this._unsubscribe = store.subscribe((newState, prevState) => {
