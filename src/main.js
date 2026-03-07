@@ -579,19 +579,19 @@ async function boot() {
   });
   _try('P13 deployPanel init', () => {
     if (typeof deployPanel.init === 'function') deployPanel.init();
-    // Wire the Save/Deploy button to open the deploy panel
+    // Wire the Save button (right-click) to open the deploy panel
     const saveBtn = document.getElementById('nv-save-btn') ||
       document.querySelector('[hint="Save"]');
-    if (saveBtn && typeof deployPanel.open === 'function') {
+    if (saveBtn && typeof deployPanel.show === 'function') {
       saveBtn.addEventListener('contextmenu', (e) => {
         e.preventDefault();
-        deployPanel.open();
+        deployPanel.show();
       });
     }
     // Wire a dedicated deploy button if it exists
     const deployBtn = document.getElementById('nv-deploy-btn');
-    if (deployBtn && typeof deployPanel.open === 'function') {
-      deployBtn.addEventListener('click', () => deployPanel.open());
+    if (deployBtn && typeof deployPanel.show === 'function') {
+      deployBtn.addEventListener('click', () => deployPanel.show());
     }
   });
   _registerModule('packSDK', packSDK);
