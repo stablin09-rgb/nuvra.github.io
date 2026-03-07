@@ -457,6 +457,60 @@ export function governanceReducer(state = GOVERNANCE_INITIAL, action) {
   }
 }
 
+// ─── Billing Reducer (Phase 7) ───────────────────────────────────────────────
+const BILLING_INITIAL = {
+  planId:            'free',
+  customerId:        null,
+  subscriptionId:    null,
+  sessionCostUSD:    0,
+  dashboard:         null,
+  transitionPreview: null,
+  pendingDowngrade:  null,
+  limitWarnings:     {},   // dimension → { pct }
+  limitBlocked:      {},   // dimension → true
+  aiCostBlocked:     null, // { scope, reason } | null
+  abuseFlag:         null, // { userId, code, reason } | null
+};
+
+export function billingReducer(state = BILLING_INITIAL, action) {
+  switch (action.type) {
+    case 'BILLING/SET_PLAN':
+      return { ...state, planId: action.payload };
+    case 'BILLING/SET_CUSTOMER_ID':
+      return { ...state, customerId: action.payload };
+    case 'BILLING/SET_SUBSCRIPTION_ID':
+      return { ...state, subscriptionId: action.payload };
+    case 'BILLING/SET_SESSION_COST':
+      return { ...state, sessionCostUSD: action.payload };
+    case 'BILLING/SET_DASHBOARD':
+      return { ...state, dashboard: action.payload };
+    case 'BILLING/SET_TRANSITION_PREVIEW':
+      return { ...state, transitionPreview: action.payload };
+    case 'BILLING/SET_PENDING_DOWNGRADE':
+      return { ...state, pendingDowngrade: action.payload };
+    case 'BILLING/CLEAR_PENDING_DOWNGRADE':
+      return { ...state, pendingDowngrade: null };
+    case 'BILLING/SET_LIMIT_WARNING': {
+      const { dimension, pct } = action.payload;
+      return { ...state, limitWarnings: { ...state.limitWarnings, [dimension]: { pct } } };
+    }
+    case 'BILLING/SET_LIMIT_BLOCKED': {
+      const { dimension } = action.payload;
+      return { ...state, limitBlocked: { ...state.limitBlocked, [dimension]: true } };
+    }
+    case 'BILLING/SET_AI_COST_BLOCKED':
+      return { ...state, aiCostBlocked: action.payload };
+    case 'BILLING/CLEAR_AI_COST_BLOCKED':
+      return { ...state, aiCostBlocked: null };
+    case 'BILLING/SET_ABUSE_FLAG':
+      return { ...state, abuseFlag: action.payload };
+    case 'BILLING/CLEAR_ABUSE_FLAG':
+      return { ...state, abuseFlag: null };
+    default:
+      return state;
+  }
+}
+
 // ─── Root Reducer ─────────────────────────────────────────────────────────────
 /**
  * Combines all slice reducers into a single root reducer.
@@ -480,6 +534,8 @@ export function rootReducer(state = {}, action) {
     auth:          authReducer(state.auth,                  action),
     cloud:         cloudReducer(state.cloud,                action),
     governance:    governanceReducer(state.governance,      action),
+    // Phase 7
+    billing:       billingReducer(state.billing,            action),
   };
 }
 

@@ -1,5 +1,5 @@
 /**
- * main.js — Nuvra Phase 6
+ * main.js — Nuvra Phase 7
  *
  * The application boot sequence.
  *
@@ -10,27 +10,37 @@
  *  4.  Initialize Secrets Manager
  *  5.  Configure AI Provider Registry (from secrets)
  *  6.  Configure Budget Engine limits
- *  7.  Initialize Auth Manager (local provider by default)
- *  8.  Initialize Cloud Adapter (Supabase if configured, local otherwise)
+ *  7.  Initialize Auth Manager
+ *  8.  Initialize Cloud Adapter
  *  9.  Initialize Ownership Manager
  * 10.  Initialize Cloud Storage
  * 11.  Initialize Sync Engine
  * 12.  Initialize Reconciliation Engine
  * 13.  Initialize AI Safety Boundary
  * 14.  Initialize AI Governance Layer
- * 15.  Register all modules (in dependency order)
- * 16.  Start all modules
- * 17.  Wire persistence auto-save
- * 18.  Wire save-requested event
- * 19.  Wire online/offline detection
- * 20.  Wire App Runtime activation
- * 21.  Wire Preview Mode activation/exit
- * 22.  Wire Publish Pipeline events
- * 23.  Wire AI Generation events (with safety boundary + governance)
- * 24.  Wire Auth events
- * 25.  Wire Cloud Sync events
- * 26.  Wire Governance events
- * 27.  Mark as booted
+ * 15.  Initialize Usage Ledger
+ * 16.  Initialize Entitlement Manager
+ * 17.  Initialize Limit Enforcement Engine
+ * 18.  Initialize AI Cost Governance
+ * 19.  Initialize Billing Provider Registry
+ * 20.  Initialize Abuse Detector
+ * 21.  Initialize Billing Dashboard
+ * 22.  Initialize Upgrade Engine
+ * 23.  Initialize Enterprise Billing
+ * 24.  Register all modules
+ * 25.  Start all modules
+ * 26.  Wire persistence auto-save
+ * 27.  Wire save-requested event
+ * 28.  Wire online/offline detection
+ * 29.  Wire App Runtime activation
+ * 30.  Wire Preview Mode activation/exit
+ * 31.  Wire Publish Pipeline events
+ * 32.  Wire AI Generation events (with safety + governance + billing)
+ * 33.  Wire Auth events
+ * 34.  Wire Cloud Sync events
+ * 35.  Wire Governance events
+ * 36.  Wire Billing events
+ * 37.  Mark as booted
  *
  * @module main
  */
@@ -76,11 +86,24 @@ import { ReconciliationEngine } from './cloud/reconciliation/reconciliationEngin
 import { AISafetyBoundary, AICapability, AIScope } from './governance/aiSafetyBoundary.js';
 import { AIGovernanceLayer }  from './governance/aiGovernanceLayer.js';
 
+// Phase 7: Billing & Usage Governance
+import { UsageLedger }            from './billing/ledger/usageLedger.js';
+import { Dimension }              from './billing/ledger/usageDimensions.js';
+import { EntitlementManager }     from './billing/plans/entitlementManager.js';
+import { LimitEnforcementEngine } from './billing/limits/limitEnforcementEngine.js';
+import { AICostGovernance }       from './billing/limits/aiCostGovernance.js';
+import { BillingProviderRegistry } from './billing/providers/billingProviderRegistry.js';
+import { LocalBillingProvider }   from './billing/providers/localBillingProvider.js';
+import { AbuseDetector }          from './billing/abuse/abuseDetector.js';
+import { BillingDashboard }       from './billing/dashboard/billingDashboard.js';
+import { UpgradeEngine }          from './billing/upgrade/upgradeEngine.js';
+import { EnterpriseBilling }      from './billing/enterprise/enterpriseBilling.js';
+
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 async function boot() {
   // ── Step 1: Install global error handlers ──────────────────────────────────
   errorBoundary.installGlobalHandlers();
-  logger.info('main', 'Nuvra booting (Phase 6)…');
+  logger.info('main', 'Nuvra booting (Phase 7)…');
 
   // ── Step 2: Initialize the Core Runtime ────────────────────────────────────
   runtime.init();
@@ -114,7 +137,6 @@ async function boot() {
     getCurrentUserId: () => store.getState().auth?.userId || null,
   });
 
-  // Store any environment-provided keys (for development)
   const envOpenAIKey    = _getEnvVar('NUVRA_OPENAI_KEY')    || _getEnvVar('OPENAI_API_KEY');
   const envAnthropicKey = _getEnvVar('NUVRA_ANTHROPIC_KEY') || _getEnvVar('ANTHROPIC_API_KEY');
   const envSupabaseUrl  = _getEnvVar('SUPABASE_URL');
@@ -126,17 +148,11 @@ async function boot() {
   const openaiKey    = envOpenAIKey    || null;
   const anthropicKey = envAnthropicKey || null;
 
-  providerRegistry.register(
-    new OpenAIProvider({ apiKey: openaiKey }),
-    { setActive: true }
-  );
+  providerRegistry.register(new OpenAIProvider({ apiKey: openaiKey }), { setActive: true });
   logger.info('main', `OpenAI provider registered (key present: ${!!openaiKey})`);
 
   if (anthropicKey) {
-    providerRegistry.register(
-      new AnthropicProvider({ apiKey: anthropicKey }),
-      { setFallback: true }
-    );
+    providerRegistry.register(new AnthropicProvider({ apiKey: anthropicKey }), { setFallback: true });
     logger.info('main', 'Anthropic provider registered as fallback');
   }
 
@@ -177,7 +193,6 @@ async function boot() {
 
   let authProvider;
   if (supabaseUrl && supabaseKey) {
-    // Use Supabase auth if configured
     const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm').catch(() => ({ createClient: null }));
     if (createClient) {
       const supabaseClient = createClient(supabaseUrl, supabaseKey);
@@ -193,14 +208,13 @@ async function boot() {
   }
 
   const authManager = new AuthManager({
-    provider:         authProvider,
+    provider:       authProvider,
     store,
     eventBus,
-    tokenManager:     { store: (k, v) => {}, retrieve: (k) => null, clear: (k) => {} }, // Simplified
-    sessionManager:   { create: (s) => {}, restore: () => null, clear: () => {} },       // Simplified
+    tokenManager:   { store: (k, v) => {}, retrieve: (k) => null, clear: (k) => {} },
+    sessionManager: { create: (s) => {}, restore: () => null, clear: () => {} },
   });
 
-  // Restore session from storage
   await authManager.restoreSession();
   logger.info('main', `Auth session restored (authenticated: ${authManager.isAuthenticated()})`);
 
@@ -218,7 +232,6 @@ async function boot() {
         logger.info('main', 'Supabase cloud adapter initialized');
       } else {
         cloudAdapter = new LocalCloudAdapter();
-        logger.info('main', 'Supabase import failed — using local cloud adapter');
       }
     } catch (err) {
       cloudAdapter = new LocalCloudAdapter();
@@ -226,64 +239,41 @@ async function boot() {
     }
   } else {
     cloudAdapter = new LocalCloudAdapter();
-    logger.info('main', 'Local cloud adapter initialized (no Supabase credentials)');
+    logger.info('main', 'Local cloud adapter initialized');
   }
 
   // ── Step 9: Initialize Ownership Manager ───────────────────────────────────
   const ownershipManager = new OwnershipManager({
-    store,
-    eventBus,
-    cloudAdapter,
+    store, eventBus, cloudAdapter,
     getCurrentUserId: () => store.getState().auth?.userId || null,
   });
 
-  // Load projects if authenticated
   if (authManager.isAuthenticated()) {
     await ownershipManager.loadProjects();
     logger.info('main', 'Projects loaded');
   }
 
   // ── Step 10: Initialize Cloud Storage ──────────────────────────────────────
-  const cloudStorage = new CloudStorage({
-    adapter:          cloudAdapter,
-    ownershipManager,
-    eventBus,
-  });
+  const cloudStorage = new CloudStorage({ adapter: cloudAdapter, ownershipManager, eventBus });
 
   // ── Step 11: Initialize Sync Engine ────────────────────────────────────────
   const syncEngine = new SyncEngine({
-    cloudAdapter,
-    store,
-    eventBus,
+    cloudAdapter, store, eventBus,
     defaultStrategy: MergeStrategy.LATEST_WINS,
-    getLocalSchema:  async (projectId, schemaType) => {
-      const state = store.getState();
-      return state.schemas?.[projectId]?.[schemaType] || null;
-    },
-    setLocalSchema:  async (projectId, schemaType, data) => {
-      store.dispatch({ type: 'SCHEMA/SET', payload: { projectId, schemaType, data } });
-    },
+    getLocalSchema:  async (projectId, schemaType) => store.getState().schemas?.[projectId]?.[schemaType] || null,
+    setLocalSchema:  async (projectId, schemaType, data) => store.dispatch({ type: 'SCHEMA/SET', payload: { projectId, schemaType, data } }),
   });
 
   // ── Step 12: Initialize Reconciliation Engine ───────────────────────────────
   const reconciliationEngine = new ReconciliationEngine({
-    cloudStorage,
-    store,
-    eventBus,
-    getLocalState:   async (projectId, schemaType) => {
-      const state = store.getState();
-      return state.schemas?.[projectId]?.[schemaType] || null;
-    },
-    applyLocalState: async (projectId, schemaType, data) => {
-      store.dispatch({ type: 'SCHEMA/SET', payload: { projectId, schemaType, data } });
-    },
+    cloudStorage, store, eventBus,
+    getLocalState:   async (projectId, schemaType) => store.getState().schemas?.[projectId]?.[schemaType] || null,
+    applyLocalState: async (projectId, schemaType, data) => store.dispatch({ type: 'SCHEMA/SET', payload: { projectId, schemaType, data } }),
   });
 
   // ── Step 13: Initialize AI Safety Boundary ─────────────────────────────────
   const aiSafetyBoundary = new AISafetyBoundary({
-    store,
-    eventBus,
-    ownershipManager,
+    store, eventBus, ownershipManager,
     getCurrentUserId: () => store.getState().auth?.userId || null,
     limits: {
       maxTokensPerCall:    8_000,
@@ -296,8 +286,7 @@ async function boot() {
 
   // ── Step 14: Initialize AI Governance Layer ─────────────────────────────────
   const aiGovernance = new AIGovernanceLayer({
-    store,
-    eventBus,
+    store, eventBus,
     getCurrentUserId: () => store.getState().auth?.userId || null,
     config: {
       requireApprovalForGeneration: false,
@@ -306,20 +295,119 @@ async function boot() {
     },
   });
 
-  // ── Step 15: Register all modules ──────────────────────────────────────────
+  // ── Step 15: Initialize Usage Ledger ───────────────────────────────────────
+  const usageLedger = new UsageLedger({ eventBus, logger });
+  logger.info('main', 'Usage Ledger initialized');
+
+  // ── Step 16: Initialize Entitlement Manager ────────────────────────────────
+  const entitlementManager = new EntitlementManager({
+    ledger:           usageLedger,
+    getPlanId:        () => store.getState().billing?.planId || 'free',
+    getCurrentUserId: () => store.getState().auth?.userId || null,
+    eventBus,
+  });
+  logger.info('main', 'Entitlement Manager initialized');
+
+  // ── Step 17: Initialize Limit Enforcement Engine ───────────────────────────
+  const limitEngine = new LimitEnforcementEngine({
+    ledger:             usageLedger,
+    entitlementManager,
+    eventBus,
+    logger,
+  });
+
+  limitEngine.on('limit:soft_warning', ({ dimension, pct, planId }) => {
+    toastManager.show(`Usage warning: ${dimension} at ${pct.toFixed(0)}% of plan limit`, 'warning', 4000);
+    store.dispatch({ type: 'BILLING/SET_LIMIT_WARNING', payload: { dimension, pct } });
+  });
+
+  limitEngine.on('limit:hard_blocked', ({ dimension, planId }) => {
+    toastManager.show(`Limit reached: ${dimension}. Upgrade your plan to continue.`, 'error', 6000);
+    store.dispatch({ type: 'BILLING/SET_LIMIT_BLOCKED', payload: { dimension } });
+  });
+
+  logger.info('main', 'Limit Enforcement Engine initialized');
+
+  // ── Step 18: Initialize AI Cost Governance ─────────────────────────────────
+  const aiCostGovernance = new AICostGovernance({
+    ledger:           usageLedger,
+    entitlementManager,
+    eventBus,
+    logger,
+    defaultLimits: {
+      perSessionUSD:  5.00,
+      perProjectUSD:  50.00,
+      perMonthUSD:    100.00,
+    },
+  });
+
+  aiCostGovernance.on('cost:warning', ({ scope, costUSD, limitUSD }) => {
+    toastManager.show(`AI cost warning: $${costUSD.toFixed(4)} of $${limitUSD.toFixed(2)} ${scope} limit`, 'warning', 4000);
+  });
+
+  aiCostGovernance.on('cost:blocked', ({ scope, reason }) => {
+    toastManager.show(`AI blocked: ${reason}`, 'error', 5000);
+    store.dispatch({ type: 'BILLING/SET_AI_COST_BLOCKED', payload: { scope, reason } });
+  });
+
+  logger.info('main', 'AI Cost Governance initialized');
+
+  // ── Step 19: Initialize Billing Provider Registry ──────────────────────────
+  const billingProviders = new BillingProviderRegistry();
+  // LocalBillingProvider is registered by default in the registry constructor
+  logger.info('main', 'Billing Provider Registry initialized');
+
+  // ── Step 20: Initialize Abuse Detector ─────────────────────────────────────
+  const abuseDetector = new AbuseDetector({ eventBus, logger });
+
+  abuseDetector.on = (event, handler) => eventBus.on(`billing:abuse:${event}`, handler);
+
+  eventBus.on('billing:abuse:detected', ({ userId, code, action, reason }) => {
+    logger.warn('main', `Abuse detected: ${code} for ${userId} — action: ${action}`, { reason });
+    if (action === 'block') {
+      toastManager.show(`Account flagged for suspicious activity: ${code}`, 'error', 8000);
+      store.dispatch({ type: 'BILLING/SET_ABUSE_FLAG', payload: { userId, code, reason } });
+    } else if (action === 'throttle') {
+      toastManager.show('Slow down — too many requests', 'warning', 4000);
+    }
+  });
+
+  logger.info('main', 'Abuse Detector initialized');
+
+  // ── Step 21: Initialize Billing Dashboard ──────────────────────────────────
+  const billingDashboard = new BillingDashboard({
+    ledger:             usageLedger,
+    entitlementManager,
+  });
+  logger.info('main', 'Billing Dashboard initialized');
+
+  // ── Step 22: Initialize Upgrade Engine ─────────────────────────────────────
+  const upgradeEngine = new UpgradeEngine({
+    billingProviderRegistry: billingProviders,
+    ledger:                  usageLedger,
+    eventBus,
+    logger,
+  });
+  logger.info('main', 'Upgrade Engine initialized');
+
+  // ── Step 23: Initialize Enterprise Billing ─────────────────────────────────
+  const enterpriseBilling = new EnterpriseBilling({ ledger: usageLedger, eventBus, logger });
+  logger.info('main', 'Enterprise Billing initialized');
+
+  // ── Step 24: Register all modules ──────────────────────────────────────────
   runtime
     .register(pageManager)
     .register(editorShell);
 
-  // ── Step 16: Start all modules ─────────────────────────────────────────────
+  // ── Step 25: Start all modules ─────────────────────────────────────────────
   await runtime.start();
 
-  // ── Step 17: Wire auto-save ─────────────────────────────────────────────────
+  // ── Step 26: Wire auto-save ─────────────────────────────────────────────────
   store.subscribe((newState) => {
     storageEngine.scheduleSave(newState);
   });
 
-  // ── Step 18: Wire save-requested event ─────────────────────────────────────
+  // ── Step 27: Wire save-requested event ─────────────────────────────────────
   eventBus.on('editor:save_requested', () => {
     const result = storageEngine.save(store.getState());
     if (result.ok) {
@@ -328,18 +416,15 @@ async function boot() {
       toastManager.show('Saved', 'success', 2000);
     } else {
       errorBoundary.capture(new Error(result.error), {
-        module:   'persistence',
-        context:  'manual save',
-        severity: ErrorSeverity.HIGH,
+        module: 'persistence', context: 'manual save', severity: ErrorSeverity.HIGH,
       });
     }
   });
 
-  // ── Step 19: Wire online/offline detection ──────────────────────────────────
+  // ── Step 28: Wire online/offline detection ──────────────────────────────────
   if (typeof window !== 'undefined') {
-    window.addEventListener('online',  () => {
+    window.addEventListener('online', () => {
       store.dispatch({ type: 'FLAGS/SET_ONLINE', payload: true });
-      // Flush offline queue on reconnect
       const activeProjectId = store.getState().activeProjectId;
       if (activeProjectId && syncEngine.getOfflineQueueSize() > 0) {
         syncEngine.sync(activeProjectId, ['site_schema', 'app_schema', 'data_model'])
@@ -354,7 +439,7 @@ async function boot() {
     });
   }
 
-  // ── Step 20: Wire App Runtime activation ───────────────────────────────────
+  // ── Step 29: Wire App Runtime activation ───────────────────────────────────
   eventBus.on('app:runtime:boot', async ({ appSchema, mountEl, mode }) => {
     if (!appSchema || !mountEl) return;
     try {
@@ -374,7 +459,7 @@ async function boot() {
     }
   });
 
-  // ── Step 21: Wire Preview Mode ──────────────────────────────────────────────
+  // ── Step 30: Wire Preview Mode ──────────────────────────────────────────────
   eventBus.on('editor:enter_preview', async ({ appSchema, mountEl, debug }) => {
     if (!appSchema || !mountEl) return;
     store.dispatch({ type: 'PREVIEW/SET_STATE', payload: 'loading' });
@@ -392,18 +477,39 @@ async function boot() {
     store.dispatch({ type: 'EDITOR/SET_MODE', payload: 'edit' });
   });
 
-  // ── Step 22: Wire Publish Pipeline ─────────────────────────────────────────
+  // ── Step 31: Wire Publish Pipeline ─────────────────────────────────────────
   eventBus.on('publish:run', async ({ appSchema, target, config }) => {
     if (!appSchema) return;
+
+    // Phase 7: Check publish entitlement
+    const userId = store.getState().auth?.userId || null;
+    const planId = store.getState().billing?.planId || 'free';
+    const check  = limitEngine.check({ dimension: Dimension.PUBLISHES, userId, planId });
+
+    if (!check.allowed) {
+      toastManager.show(`Publish blocked: ${check.reason}`, 'error', 6000);
+      return;
+    }
+
     const resolvedTarget = target || RenderTarget.STATIC_SITE;
     store.dispatch({ type: 'PUBLISH/SET_STAGE', payload: 'validate' });
-
     const result = await publishPipeline.run({ appSchema, target: resolvedTarget, config: config || {} });
 
     if (!result.ok) {
       runtimeErrorBoundary.capture(new Error(result.error), { module: 'publishPipeline', errorClass: 'publish_error' });
       toastManager.show('Publish failed: ' + result.error, 'error', 5000);
       return;
+    }
+
+    // Record the publish in the usage ledger
+    if (userId) {
+      usageLedger.record({
+        dimension:  Dimension.PUBLISHES,
+        quantity:   1,
+        userId,
+        projectId:  appSchema.id,
+        meta:       { target: resolvedTarget },
+      });
     }
 
     const outputTarget = outputTargets[resolvedTarget];
@@ -419,8 +525,7 @@ async function boot() {
     }
   });
 
-  // ── Step 23: Wire AI Generation events (with safety + governance) ───────────
-
+  // ── Step 32: Wire AI Generation events (with safety + governance + billing) ─
   aiGenerationEngine.subscribe((event, data) => {
     switch (event) {
       case 'generation:started':
@@ -456,12 +561,63 @@ async function boot() {
       return;
     }
 
+    const userId = store.getState().auth?.userId || null;
+    const planId = store.getState().billing?.planId || 'free';
+
+    // Phase 7: Abuse detection
+    if (userId) {
+      const sessionCost = aiCostGovernance.getSessionCostUSD(userId);
+      const planMonthly = entitlementManager.getEntitlement(planId, Dimension.AI_COST_USD)?.limit || Infinity;
+      const abuseCheck  = abuseDetector.check({
+        userId,
+        prompt,
+        resourceId:              projectId,
+        estimatedInputTokens:    Math.ceil(prompt.length / 4),
+        estimatedOutputTokens:   2000,
+        sessionCostUSD:          sessionCost,
+        monthlyBudgetUSD:        planMonthly,
+      });
+
+      if (!abuseCheck.clean) {
+        if (abuseCheck.action === 'block') {
+          toastManager.show(`Request blocked: ${abuseCheck.code}`, 'error', 6000);
+          return;
+        }
+        if (abuseCheck.action === 'throttle') {
+          toastManager.show('Slow down — too many similar requests', 'warning', 4000);
+          await new Promise(r => setTimeout(r, 3000));
+        }
+      }
+    }
+
+    // Phase 7: AI cost governance check
+    if (userId) {
+      const costCheck = aiCostGovernance.checkBeforeCall({
+        userId,
+        projectId,
+        estimatedCostUSD: 0.05,
+      });
+      if (!costCheck.allowed) {
+        toastManager.show(`AI blocked: ${costCheck.reason}`, 'error', 5000);
+        return;
+      }
+    }
+
+    // Phase 7: Entitlement check for AI generations
+    if (userId) {
+      const entCheck = limitEngine.check({ dimension: Dimension.AI_GENERATIONS, userId, planId });
+      if (!entCheck.allowed) {
+        toastManager.show(`AI generation limit reached. ${entCheck.upgradeMessage || 'Upgrade to continue.'}`, 'error', 6000);
+        return;
+      }
+    }
+
     // Phase 6: Safety boundary check
     const boundaryCheck = aiSafetyBoundary.checkPermission({
       projectId:       projectId || null,
       capability:      AICapability.GENERATION,
       scope:           projectId ? AIScope.PROJECT : AIScope.GLOBAL,
-      estimatedTokens: Math.ceil(prompt.length / 4) * 10, // Rough estimate
+      estimatedTokens: Math.ceil(prompt.length / 4) * 10,
       estimatedCost:   0.05,
     });
 
@@ -490,7 +646,6 @@ async function boot() {
     const runId = _generateId('gen');
     generationLedger.startSession(runId, prompt);
 
-    // Phase 6: Record prompt in governance layer
     aiGovernance.recordPromptSent({
       operationId:     runId,
       projectId,
@@ -503,8 +658,8 @@ async function boot() {
     });
 
     const result = await aiGenerationEngine.generate({
-      prompt:   scan.sanitized || prompt,
-      options:  options || {},
+      prompt:  scan.sanitized || prompt,
+      options: options || {},
     });
 
     if (result.ok) {
@@ -515,7 +670,6 @@ async function boot() {
         return;
       }
 
-      // Phase 6: Request approval (auto-approved if below threshold)
       const approval = aiGovernance.requestApproval({
         operationId:    runId,
         projectId,
@@ -528,9 +682,25 @@ async function boot() {
         toastManager.show('AI generation requires approval — check the governance panel', 'info', 5000);
         store.dispatch({ type: 'AI/SET_PENDING_APPROVAL', payload: { approvalId: approval.approvalId, schema: result.schema } });
       } else {
-        // Auto-approved — record usage
         aiSafetyBoundary.recordUsage(projectId, result.tokensUsed || 0, result.costUsd || 0);
         aiGovernance.recordSchemaDiff({ operationId: runId, projectId, schemaType: 'app_schema', before: null, after: result.schema });
+
+        // Phase 7: Record usage in ledger
+        if (userId) {
+          const inputTokens  = result.tokensUsed?.input  || Math.ceil(prompt.length / 4) * 10;
+          const outputTokens = result.tokensUsed?.output || 1000;
+          const costUSD      = result.costUsd || 0.05;
+
+          usageLedger.record({ dimension: Dimension.AI_GENERATIONS,   quantity: 1,            userId, projectId });
+          usageLedger.record({ dimension: Dimension.AI_TOKENS_INPUT,  quantity: inputTokens,  userId, projectId, provider: providerRegistry.getActive()?.id });
+          usageLedger.record({ dimension: Dimension.AI_TOKENS_OUTPUT, quantity: outputTokens, userId, projectId, provider: providerRegistry.getActive()?.id });
+          usageLedger.record({ dimension: Dimension.AI_COST_USD,      quantity: costUSD,      userId, projectId, provider: providerRegistry.getActive()?.id, meta: { model: 'gpt-4o' } });
+
+          aiCostGovernance.recordCost({ userId, projectId, costUSD, inputTokens, outputTokens });
+
+          // Update billing state
+          store.dispatch({ type: 'BILLING/SET_SESSION_COST', payload: aiCostGovernance.getSessionCostUSD(userId) });
+        }
       }
 
       generationLedger.closeSession(runId);
@@ -540,7 +710,6 @@ async function boot() {
 
   eventBus.on('ai:regenerate', async ({ schema, target, targetId, instruction, projectId }) => {
     if (!schema || !instruction?.trim()) return;
-
     const result = await aiGenerationEngine.regenerate({ schema, target, targetId, instruction });
     if (result.ok) {
       const schemaScan = securityScanner.scanSchema(result.schema);
@@ -553,7 +722,7 @@ async function boot() {
     }
   });
 
-  // ── Step 24: Wire Auth events ───────────────────────────────────────────────
+  // ── Step 33: Wire Auth events ───────────────────────────────────────────────
   eventBus.on('auth:sign_in', async ({ email, password, provider }) => {
     let result;
     if (provider === 'google' || provider === 'github') {
@@ -561,7 +730,6 @@ async function boot() {
     } else {
       result = await authManager.signIn(email, password);
     }
-
     if (result.ok) {
       await ownershipManager.loadProjects();
       toastManager.show('Signed in', 'success', 2000);
@@ -585,12 +753,11 @@ async function boot() {
     toastManager.show('Signed out', 'info', 2000);
   });
 
-  // ── Step 25: Wire Cloud Sync events ────────────────────────────────────────
+  // ── Step 34: Wire Cloud Sync events ────────────────────────────────────────
   eventBus.on('cloud:sync', async ({ projectId, schemaTypes }) => {
     if (!projectId) return;
-    const types = schemaTypes || ['site_schema', 'app_schema', 'data_model'];
+    const types  = schemaTypes || ['site_schema', 'app_schema', 'data_model'];
     const result = await syncEngine.sync(projectId, types);
-
     if (result.ok) {
       if (result.conflicts > 0) {
         toastManager.show(`Sync complete — ${result.conflicts} conflict(s) need review`, 'warning', 5000);
@@ -604,16 +771,13 @@ async function boot() {
 
   eventBus.on('cloud:resolve_conflict', async ({ conflictId, resolution, mergedData }) => {
     const result = await syncEngine.resolveConflict(conflictId, resolution, mergedData);
-    if (result.ok) {
-      toastManager.show('Conflict resolved', 'success', 2000);
-    }
+    if (result.ok) toastManager.show('Conflict resolved', 'success', 2000);
   });
 
   eventBus.on('cloud:save_schema', async ({ projectId, schemaType, data }) => {
     if (!projectId || !schemaType || !data) return;
     const result = await cloudStorage.save(projectId, schemaType, data);
     if (!result.ok) {
-      // Queue for offline sync
       syncEngine.queueOfflineChange(projectId, schemaType, data);
       logger.warn('main', 'Cloud save failed — queued for offline sync', { projectId, schemaType });
     }
@@ -629,11 +793,10 @@ async function boot() {
     }
   });
 
-  // ── Step 26: Wire Governance events ────────────────────────────────────────
+  // ── Step 35: Wire Governance events ────────────────────────────────────────
   eventBus.on('governance:approve', ({ approvalId, reason }) => {
     const result = aiGovernance.approve(approvalId, reason);
     if (result.ok) {
-      // Apply the approved schema
       const pending = store.getState().ai?.pendingApproval;
       if (pending?.approvalId === approvalId) {
         store.dispatch({ type: 'AI/SET_SCHEMA', payload: pending.schema });
@@ -649,7 +812,6 @@ async function boot() {
     toastManager.show('AI generation rejected', 'info', 2000);
   });
 
-  // HITL events (from Phase 5)
   eventBus.on('ai:accept_decision',  ({ runId, decisionId }) => generationLedger.acceptDecision(runId, decisionId));
   eventBus.on('ai:modify_decision',  ({ runId, decisionId, newValue, userReason }) => generationLedger.modifyDecision(runId, decisionId, newValue, userReason));
   eventBus.on('ai:reject_decision',  ({ runId, decisionId, feedback }) => generationLedger.rejectDecision(runId, decisionId, feedback));
@@ -670,12 +832,10 @@ async function boot() {
     }
   });
 
-  // Secrets management events
   eventBus.on('secrets:store_key', ({ keyType, value, scope, projectId, label }) => {
     const result = secretsManager.storeKey(keyType, value, { scope, projectId, label });
     if (result.ok) {
       toastManager.show('Key stored securely', 'success', 2000);
-      // Re-configure AI providers if an AI key was stored
       if (keyType === KeyType.OPENAI_API_KEY) {
         const newKey = secretsManager.getKey(KeyType.OPENAI_API_KEY);
         if (newKey) providerRegistry.register(new OpenAIProvider({ apiKey: newKey }), { setActive: true });
@@ -685,10 +845,96 @@ async function boot() {
     }
   });
 
-  // ── Step 27: Mark as booted ─────────────────────────────────────────────────
+  // ── Step 36: Wire Billing events ───────────────────────────────────────────
+
+  // Get billing dashboard data
+  eventBus.on('billing:get_dashboard', () => {
+    const userId = store.getState().auth?.userId || null;
+    const planId = store.getState().billing?.planId || 'free';
+    if (!userId) return;
+    const data = billingDashboard.getDashboardData({ userId, planId });
+    store.dispatch({ type: 'BILLING/SET_DASHBOARD', payload: data });
+  });
+
+  // Preview a plan transition
+  eventBus.on('billing:preview_transition', ({ fromPlanId, toPlanId, currentPeriodEnd }) => {
+    const preview = upgradeEngine.previewTransition({ userId: store.getState().auth?.userId, fromPlanId, toPlanId, currentPeriodEnd });
+    store.dispatch({ type: 'BILLING/SET_TRANSITION_PREVIEW', payload: preview });
+  });
+
+  // Execute an upgrade
+  eventBus.on('billing:upgrade', async ({ toPlanId, successUrl, cancelUrl }) => {
+    const userId     = store.getState().auth?.userId || null;
+    const customerId = store.getState().billing?.customerId || null;
+    const fromPlanId = store.getState().billing?.planId || 'free';
+    if (!userId) return;
+
+    const result = await upgradeEngine.executeUpgrade({ userId, customerId, fromPlanId, toPlanId, successUrl, cancelUrl });
+    if (result.ok) {
+      if (result.checkoutUrl) {
+        if (typeof window !== 'undefined') window.location.href = result.checkoutUrl;
+      } else {
+        store.dispatch({ type: 'BILLING/SET_PLAN', payload: toPlanId });
+        toastManager.show(`Upgraded to ${toPlanId}`, 'success', 3000);
+      }
+    } else {
+      toastManager.show(`Upgrade failed: ${result.error}`, 'error', 4000);
+    }
+  });
+
+  // Schedule a downgrade
+  eventBus.on('billing:schedule_downgrade', async ({ toPlanId, subscriptionId, currentPeriodEnd }) => {
+    const userId     = store.getState().auth?.userId || null;
+    const fromPlanId = store.getState().billing?.planId || 'free';
+    if (!userId) return;
+
+    const result = await upgradeEngine.scheduleDowngrade({ userId, subscriptionId, fromPlanId, toPlanId, currentPeriodEnd });
+    if (result.ok) {
+      store.dispatch({ type: 'BILLING/SET_PENDING_DOWNGRADE', payload: { toPlanId, effectiveAt: result.effectiveAt } });
+      toastManager.show(`Downgrade to ${toPlanId} scheduled for ${result.effectiveAt}`, 'info', 5000);
+    } else {
+      toastManager.show(`Downgrade failed: ${result.error}`, 'error', 4000);
+    }
+  });
+
+  // Cancel a pending downgrade
+  eventBus.on('billing:cancel_downgrade', () => {
+    const userId = store.getState().auth?.userId || null;
+    if (!userId) return;
+    upgradeEngine.cancelPendingDowngrade(userId);
+    store.dispatch({ type: 'BILLING/CLEAR_PENDING_DOWNGRADE' });
+    toastManager.show('Downgrade cancelled', 'success', 2000);
+  });
+
+  // Export usage data
+  eventBus.on('billing:export_usage', ({ format, since, until }) => {
+    const userId = store.getState().auth?.userId || null;
+    if (!userId) return;
+    const { since: mSince, until: mUntil } = UsageLedger.currentMonthWindow();
+    const exportSince = since || mSince;
+    const exportUntil = until || mUntil;
+
+    if (format === 'csv') {
+      const csv = usageLedger.exportCSV(userId, exportSince, exportUntil);
+      _downloadText(csv, `nuvra-usage-${exportSince.slice(0, 7)}.csv`, 'text/csv');
+    } else {
+      const json = usageLedger.exportJSON(userId, exportSince, exportUntil);
+      _downloadText(JSON.stringify(json, null, 2), `nuvra-usage-${exportSince.slice(0, 7)}.json`, 'application/json');
+    }
+    toastManager.show('Usage data exported', 'success', 2000);
+  });
+
+  // Clear abuse flag (admin action)
+  eventBus.on('billing:clear_abuse_flag', ({ userId }) => {
+    abuseDetector.clearFlag(userId);
+    store.dispatch({ type: 'BILLING/CLEAR_ABUSE_FLAG', payload: { userId } });
+    toastManager.show('Abuse flag cleared', 'success', 2000);
+  });
+
+  // ── Step 37: Mark as booted ─────────────────────────────────────────────────
   store.dispatch({ type: 'FLAGS/SET_BOOTED' });
   eventBus.emit('app:booted', { ts: Date.now() });
-  logger.info('main', 'Nuvra booted successfully (Phase 6)');
+  logger.info('main', 'Nuvra booted successfully (Phase 7)');
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -698,15 +944,31 @@ function _getEnvVar(name) {
   return null;
 }
 
-function _generateId(prefix) {
-  return (prefix || 'id') + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+function _generateId(prefix = 'id') {
+  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-// ─── Boot ─────────────────────────────────────────────────────────────────────
-boot().catch((err) => {
-  console.error('[Nuvra] Fatal boot error:', err);
-  document.body.innerHTML = `<div style="padding:2rem;font-family:monospace;color:#e53e3e">
-    <h2>Nuvra failed to start</h2>
-    <pre>${err.message}\n${err.stack}</pre>
-  </div>`;
-});
+function _downloadText(content, filename, mimeType) {
+  if (typeof window === 'undefined') return;
+  const blob = new Blob([content], { type: mimeType });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── Entry Point ──────────────────────────────────────────────────────────────
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot().catch(err => {
+      console.error('[Nuvra] Boot failed:', err);
+    });
+  }
+} else {
+  // Node.js environment (tests)
+  module.exports = { boot };
+}
