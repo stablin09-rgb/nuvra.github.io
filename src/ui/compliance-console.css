@@ -1,0 +1,505 @@
+.nv-compliance-btn {
+  background: linear-gradient(135deg, #1a3a5c 0%, #0d2137 100%);
+  color: #7ec8e3;
+  border-color: #2a5a8c;
+  font-weight: 600;
+  position: relative;
+}
+.nv-compliance-btn:hover {
+  background: linear-gradient(135deg, #2a5a8c 0%, #1a3a5c 100%);
+  color: #a8dff0;
+}
+.nv-compliance-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: #e74c3c;
+  color: #fff;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 700;
+  margin-left: 5px;
+  vertical-align: middle;
+  animation: nv-compliance-pulse 2s ease-in-out infinite;
+}
+@keyframes nv-compliance-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.7; transform: scale(1.15); }
+}
+
+/* ── Compliance Console Panel ────────────────────────────────── */
+#nv-compliance-console {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 820px;
+  max-width: 95vw;
+  height: 100vh;
+  background: #0d1117;
+  border-left: 1px solid #21262d;
+  z-index: 9500;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 40px rgba(0,0,0,0.6);
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Inter', sans-serif;
+  color: #c9d1d9;
+}
+#nv-compliance-console.open {
+  transform: translateX(0);
+}
+
+/* ── Console Header ──────────────────────────────────────────── */
+.nv-cc-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #161b22;
+  border-bottom: 1px solid #21262d;
+  flex-shrink: 0;
+}
+.nv-cc-header-icon {
+  font-size: 22px;
+}
+.nv-cc-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #f0f6fc;
+  flex: 1;
+}
+.nv-cc-close {
+  background: none;
+  border: none;
+  color: #8b949e;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.nv-cc-close:hover {
+  color: #f0f6fc;
+  background: #21262d;
+}
+
+/* ── Risk Score Banner ───────────────────────────────────────── */
+.nv-cc-risk-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  background: #161b22;
+  border-bottom: 1px solid #21262d;
+  flex-shrink: 0;
+}
+.nv-cc-risk-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+}
+.nv-cc-risk-number {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+}
+.nv-cc-risk-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #8b949e;
+  margin-top: 2px;
+}
+.nv-cc-risk-low    .nv-cc-risk-number { color: #3fb950; }
+.nv-cc-risk-medium .nv-cc-risk-number { color: #d29922; }
+.nv-cc-risk-high   .nv-cc-risk-number { color: #f85149; }
+.nv-cc-risk-critical .nv-cc-risk-number { color: #ff7b72; }
+
+.nv-cc-framework-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+.nv-cc-framework-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+.nv-cc-chip-pass   { background: rgba(63,185,80,0.15);  color: #3fb950; border-color: rgba(63,185,80,0.3); }
+.nv-cc-chip-warn   { background: rgba(210,153,34,0.15); color: #d29922; border-color: rgba(210,153,34,0.3); }
+.nv-cc-chip-fail   { background: rgba(248,81,73,0.15);  color: #f85149; border-color: rgba(248,81,73,0.3); }
+.nv-cc-chip-na     { background: rgba(139,148,158,0.15); color: #8b949e; border-color: rgba(139,148,158,0.3); }
+
+/* ── Console Tabs ────────────────────────────────────────────── */
+.nv-cc-tabs {
+  display: flex;
+  gap: 0;
+  background: #161b22;
+  border-bottom: 1px solid #21262d;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+.nv-cc-tab {
+  padding: 10px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #8b949e;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+  user-select: none;
+}
+.nv-cc-tab:hover { color: #c9d1d9; }
+.nv-cc-tab.active {
+  color: #7ec8e3;
+  border-bottom-color: #7ec8e3;
+}
+
+/* ── Console Body ────────────────────────────────────────────── */
+.nv-cc-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+.nv-cc-panel { display: none; }
+.nv-cc-panel.active { display: block; }
+
+/* ── Section Headers ─────────────────────────────────────────── */
+.nv-cc-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f0f6fc;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #21262d;
+}
+
+/* ── Violation List ──────────────────────────────────────────── */
+.nv-cc-violation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.nv-cc-violation {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  border-left-width: 3px;
+  transition: border-color 0.15s;
+}
+.nv-cc-violation:hover { border-color: #30363d; }
+.nv-cc-violation.critical { border-left-color: #ff7b72; }
+.nv-cc-violation.high     { border-left-color: #f85149; }
+.nv-cc-violation.medium   { border-left-color: #d29922; }
+.nv-cc-violation.low      { border-left-color: #3fb950; }
+.nv-cc-violation.info     { border-left-color: #58a6ff; }
+
+.nv-cc-v-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.nv-cc-v-body { flex: 1; min-width: 0; }
+.nv-cc-v-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f0f6fc;
+  margin-bottom: 3px;
+}
+.nv-cc-v-desc {
+  font-size: 12px;
+  color: #8b949e;
+  line-height: 1.5;
+}
+.nv-cc-v-meta {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.nv-cc-v-tag {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #21262d;
+  color: #8b949e;
+}
+.nv-cc-v-actions { display: flex; gap: 6px; align-items: flex-start; }
+.nv-cc-v-fix-btn {
+  padding: 4px 10px;
+  background: #1f6feb;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.nv-cc-v-fix-btn:hover { background: #388bfd; }
+
+/* ── Data Classification Table ───────────────────────────────── */
+.nv-cc-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-bottom: 24px;
+}
+.nv-cc-data-table th {
+  text-align: left;
+  padding: 8px 12px;
+  background: #161b22;
+  color: #8b949e;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 11px;
+  border-bottom: 1px solid #21262d;
+}
+.nv-cc-data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #21262d;
+  color: #c9d1d9;
+  vertical-align: middle;
+}
+.nv-cc-data-table tr:hover td { background: rgba(255,255,255,0.02); }
+.nv-cc-class-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.nv-cc-class-public     { background: rgba(63,185,80,0.2);  color: #3fb950; }
+.nv-cc-class-internal   { background: rgba(88,166,255,0.2); color: #58a6ff; }
+.nv-cc-class-confidential { background: rgba(210,153,34,0.2); color: #d29922; }
+.nv-cc-class-restricted { background: rgba(248,81,73,0.2);  color: #f85149; }
+.nv-cc-class-pii        { background: rgba(255,123,114,0.2); color: #ff7b72; }
+.nv-cc-class-phi        { background: rgba(255,123,114,0.2); color: #ff7b72; }
+
+/* ── Audit Log ───────────────────────────────────────────────── */
+.nv-cc-audit-log {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 11px;
+}
+.nv-cc-audit-entry {
+  display: grid;
+  grid-template-columns: 140px 80px 120px 1fr;
+  gap: 12px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  transition: background 0.1s;
+  align-items: center;
+}
+.nv-cc-audit-entry:hover { background: #161b22; }
+.nv-cc-audit-time  { color: #8b949e; }
+.nv-cc-audit-level { font-weight: 700; }
+.nv-cc-audit-level.info     { color: #58a6ff; }
+.nv-cc-audit-level.warn     { color: #d29922; }
+.nv-cc-audit-level.error    { color: #f85149; }
+.nv-cc-audit-level.critical { color: #ff7b72; }
+.nv-cc-audit-actor { color: #7ec8e3; }
+.nv-cc-audit-msg   { color: #c9d1d9; }
+.nv-cc-audit-hash  { color: #3fb950; font-size: 10px; }
+
+/* ── Threat Model ────────────────────────────────────────────── */
+.nv-cc-threat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.nv-cc-threat-card {
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  padding: 14px;
+}
+.nv-cc-threat-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.nv-cc-threat-category {
+  font-size: 12px;
+  font-weight: 700;
+  color: #f0f6fc;
+  flex: 1;
+}
+.nv-cc-threat-count {
+  font-size: 20px;
+  font-weight: 800;
+  color: #f85149;
+}
+.nv-cc-threat-desc {
+  font-size: 11px;
+  color: #8b949e;
+  line-height: 1.5;
+}
+
+/* ── Supply Chain ────────────────────────────────────────────── */
+.nv-cc-supply-chain-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.nv-cc-sc-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+}
+.nv-cc-sc-icon { font-size: 16px; }
+.nv-cc-sc-name { font-size: 13px; font-weight: 600; color: #f0f6fc; flex: 1; }
+.nv-cc-sc-version { font-size: 11px; color: #8b949e; }
+.nv-cc-sc-status {
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.nv-cc-sc-verified   { background: rgba(63,185,80,0.2);  color: #3fb950; }
+.nv-cc-sc-unverified { background: rgba(248,81,73,0.2);  color: #f85149; }
+.nv-cc-sc-pending    { background: rgba(210,153,34,0.2); color: #d29922; }
+
+/* ── Policy Editor ───────────────────────────────────────────── */
+.nv-cc-policy-editor {
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.nv-cc-policy-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #0d1117;
+  border-bottom: 1px solid #21262d;
+}
+.nv-cc-policy-toolbar span {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8b949e;
+  flex: 1;
+}
+.nv-cc-policy-btn {
+  padding: 4px 12px;
+  background: #21262d;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.nv-cc-policy-btn:hover { background: #30363d; }
+.nv-cc-policy-btn.primary { background: #1f6feb; color: #fff; border-color: #1f6feb; }
+.nv-cc-policy-btn.primary:hover { background: #388bfd; }
+.nv-cc-policy-textarea {
+  width: 100%;
+  min-height: 200px;
+  background: #0d1117;
+  color: #e6edf3;
+  border: none;
+  padding: 14px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.nv-cc-policy-textarea:focus { outline: none; }
+
+/* ── Jurisdiction Map ────────────────────────────────────────── */
+.nv-cc-jurisdiction-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.nv-cc-jurisdiction-card {
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+.nv-cc-jurisdiction-flag { font-size: 24px; margin-bottom: 6px; }
+.nv-cc-jurisdiction-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f0f6fc;
+  margin-bottom: 4px;
+}
+.nv-cc-jurisdiction-status {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.nv-cc-j-allowed   { background: rgba(63,185,80,0.2);  color: #3fb950; }
+.nv-cc-j-restricted { background: rgba(248,81,73,0.2); color: #f85149; }
+.nv-cc-j-conditional { background: rgba(210,153,34,0.2); color: #d29922; }
+
+/* ── Empty State ─────────────────────────────────────────────── */
+.nv-cc-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #8b949e;
+}
+.nv-cc-empty-icon { font-size: 40px; margin-bottom: 12px; }
+.nv-cc-empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #c9d1d9;
+  margin-bottom: 8px;
+}
+.nv-cc-empty-desc { font-size: 13px; line-height: 1.6; }
+
+/* ── Compliance Console Overlay ──────────────────────────────── */
+#nv-compliance-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 9499;
+  display: none;
+  backdrop-filter: blur(2px);
+}
+#nv-compliance-overlay.open { display: block; }
+
+/* ── Scrollbar styling for compliance console ────────────────── */
+#nv-compliance-console ::-webkit-scrollbar { width: 6px; }
+#nv-compliance-console ::-webkit-scrollbar-track { background: transparent; }
+#nv-compliance-console ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+#nv-compliance-console ::-webkit-scrollbar-thumb:hover { background: #484f58; }

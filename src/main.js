@@ -138,6 +138,18 @@ import { planExecutor, EXECUTION_STATUS } from './agents/planExecutor.js';
 import { agentManager }     from './agents/agentManager.js';
 import { agentConsole }     from './ui/agentConsole.js';
 
+// ─── Phase 15: Institutional Trust & Compliance ───────────────────────────────
+import { policyRegistry, SEVERITY as COMPLIANCE_SEVERITY, DATA_CLASS } from './compliance/policyRegistry.js';
+import { complianceEngine }   from './compliance/complianceEngine.js';
+import { dataClassifier }     from './compliance/dataClassifier.js';
+import { jurisdictionRules, REGION_JURISDICTIONS } from './compliance/jurisdictionRules.js';
+import { auditLogger, AUDIT_CATEGORIES } from './compliance/auditLogger.js';
+import { permissionModel, ACTIONS as PERMISSION_ACTIONS } from './security/permissionModel.js';
+import { pluginSandbox, CAPABILITIES } from './security/pluginSandbox.js';
+import { supplyChainSecurity } from './security/supplyChainSecurity.js';
+import { threatModeler }       from './security/threatModeler.js';
+import { complianceConsole }   from './ui/complianceConsole.js';
+
 // ─── Helper ───────────────────────────────────────────────────────────────────
 function _getEnvVar(name) {
   if (typeof window !== 'undefined' && window.NUVRA_ENV_VARS?.[name]) {
@@ -656,6 +668,58 @@ async function boot() {
 
   logger.info('main', 'Phase 14 modules registered');
 
+  // ── Phase 15: Institutional Trust & Compliance ────────────────────────────────
+  _try('P15 policyRegistry init', () => {
+    if (typeof policyRegistry.init === 'function') policyRegistry.init();
+  });
+  _try('P15 complianceEngine init', () => {
+    if (typeof complianceEngine.init === 'function') complianceEngine.init();
+  });
+  _try('P15 dataClassifier init', () => {
+    if (typeof dataClassifier.init === 'function') dataClassifier.init();
+  });
+  _try('P15 jurisdictionRules init', () => {
+    if (typeof jurisdictionRules.init === 'function') jurisdictionRules.init();
+  });
+  _try('P15 auditLogger init', () => {
+    if (typeof auditLogger.init === 'function') auditLogger.init();
+  });
+  _try('P15 permissionModel init', () => {
+    if (typeof permissionModel.init === 'function') permissionModel.init();
+  });
+  _try('P15 pluginSandbox init', () => {
+    if (typeof pluginSandbox.init === 'function') pluginSandbox.init();
+  });
+  _try('P15 supplyChainSecurity init', () => {
+    if (typeof supplyChainSecurity.init === 'function') supplyChainSecurity.init();
+  });
+  _try('P15 threatModeler init', () => {
+    if (typeof threatModeler.init === 'function') threatModeler.init();
+  });
+  _try('P15 complianceConsole init', () => {
+    if (typeof complianceConsole.init === 'function') complianceConsole.init();
+    // Wire the Planning button to also show the compliance console
+    const planningBtn = document.querySelector('[hint="Toggle Planning Panel"]');
+    if (planningBtn && typeof complianceConsole.open === 'function') {
+      planningBtn.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        complianceConsole.open();
+      });
+    }
+  });
+  _registerModule('policyRegistry', policyRegistry);
+  _registerModule('complianceEngine', complianceEngine);
+  _registerModule('dataClassifier', dataClassifier);
+  _registerModule('jurisdictionRules', jurisdictionRules);
+  _registerModule('auditLogger', auditLogger);
+  _registerModule('permissionModel', permissionModel);
+  _registerModule('pluginSandbox', pluginSandbox);
+  _registerModule('supplyChainSecurity', supplyChainSecurity);
+  _registerModule('threatModeler', threatModeler);
+  _registerModule('complianceConsole', complianceConsole);
+
+  logger.info('main', 'Phase 15 modules registered');
+
   // ── Step 25: Start all modules ─────────────────────────────────────────────
   _try('runtime.start', () => runtime.start());
 
@@ -743,7 +807,7 @@ async function boot() {
 
   // ── Step 38: Mark as booted ────────────────────────────────────────────────
   store.dispatch({ type: 'APP/SET_BOOTED', payload: true });
-  logger.info('main', 'Nuvra booted (Phase 14).');
+  logger.info('main', 'Nuvra booted (Phase 15).');
 
   // ── Debug handles ──────────────────────────────────────────────────────────
   Object.assign(window, {
@@ -771,6 +835,14 @@ async function boot() {
     agentRuntime, agentPermissions, agentMemory, MEMORY_CATEGORY,
     goalInterpreter, planExecutor, EXECUTION_STATUS,
     agentManager, agentConsole,
+    // Phase 15
+    policyRegistry, COMPLIANCE_SEVERITY, DATA_CLASS,
+    complianceEngine, dataClassifier,
+    jurisdictionRules, REGION_JURISDICTIONS,
+    auditLogger, AUDIT_CATEGORIES,
+    permissionModel, PERMISSION_ACTIONS,
+    pluginSandbox, CAPABILITIES,
+    supplyChainSecurity, threatModeler, complianceConsole,
   });
 }
 
