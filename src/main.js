@@ -117,6 +117,18 @@ import * as whiteLabelService  from './cloud/whiteLabelService.js';
 import * as aiGovernance       from './ai/aiGovernance.js';
 import * as adminConsole       from './ui/adminConsole.js';
 
+// ─── Phase 13: Hosting Packs & Deploy Panel ────────────────────────────────
+import { packSDK }              from './design-packs/packSDK.js';
+import { packRuntime }          from './design-packs/packRuntime.js';
+import { packManager }          from './design-packs/packManager.js';
+import { hostingManager, DEPLOY_STATUS } from './hosting/hostingManager.js';
+import { deployPipeline }       from './hosting/deployPipeline.js';
+import { deployHistory }        from './hosting/deployHistory.js';
+import { domainManager }        from './hosting/domainManager.js';
+import { observabilityService } from './hosting/observabilityService.js';
+import { aiExtensions }         from './ai/aiExtensions.js';
+import { deployPanel }          from './ui/deployPanel.js';
+
 // ─── Helper ───────────────────────────────────────────────────────────────────
 function _getEnvVar(name) {
   if (typeof window !== 'undefined' && window.NUVRA_ENV_VARS?.[name]) {
@@ -546,6 +558,55 @@ async function boot() {
 
   logger.info('main', 'Phase 12 modules registered');
 
+  // ── Phase 13: Hosting Packs & Deploy Panel ────────────────────────────────
+  _try('P13 packSDK init', () => {
+    if (typeof packSDK.init === 'function') packSDK.init();
+  });
+  _try('P13 packRuntime init', () => {
+    if (typeof packRuntime.init === 'function') packRuntime.init();
+  });
+  _try('P13 packManager init', () => {
+    if (typeof packManager.init === 'function') packManager.init();
+  });
+  _try('P13 hostingManager init', () => {
+    if (typeof hostingManager.init === 'function') hostingManager.init();
+  });
+  _try('P13 observabilityService init', () => {
+    if (typeof observabilityService.init === 'function') observabilityService.init();
+  });
+  _try('P13 aiExtensions init', () => {
+    if (typeof aiExtensions.init === 'function') aiExtensions.init();
+  });
+  _try('P13 deployPanel init', () => {
+    if (typeof deployPanel.init === 'function') deployPanel.init();
+    // Wire the Save/Deploy button to open the deploy panel
+    const saveBtn = document.getElementById('nv-save-btn') ||
+      document.querySelector('[hint="Save"]');
+    if (saveBtn && typeof deployPanel.open === 'function') {
+      saveBtn.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        deployPanel.open();
+      });
+    }
+    // Wire a dedicated deploy button if it exists
+    const deployBtn = document.getElementById('nv-deploy-btn');
+    if (deployBtn && typeof deployPanel.open === 'function') {
+      deployBtn.addEventListener('click', () => deployPanel.open());
+    }
+  });
+  _registerModule('packSDK', packSDK);
+  _registerModule('packRuntime', packRuntime);
+  _registerModule('packManager', packManager);
+  _registerModule('hostingManager', hostingManager);
+  _registerModule('deployPipeline', deployPipeline);
+  _registerModule('deployHistory', deployHistory);
+  _registerModule('domainManager', domainManager);
+  _registerModule('observabilityService', observabilityService);
+  _registerModule('aiExtensions', aiExtensions);
+  _registerModule('deployPanel', deployPanel);
+
+  logger.info('main', 'Phase 13 modules registered');
+
   // ── Step 25: Start all modules ─────────────────────────────────────────────
   _try('runtime.start', () => runtime.start());
 
@@ -633,7 +694,7 @@ async function boot() {
 
   // ── Step 38: Mark as booted ────────────────────────────────────────────────
   store.dispatch({ type: 'APP/SET_BOOTED', payload: true });
-  logger.info('main', 'Nuvra booted (Phase 12).');
+  logger.info('main', 'Nuvra booted (Phase 13).');
 
   // ── Debug handles ──────────────────────────────────────────────────────────
   Object.assign(window, {
@@ -653,6 +714,10 @@ async function boot() {
     // Phase 12
     auditService, orgService, policyEngine, identityService,
     deploymentManager, whiteLabelService, aiGovernance, adminConsole,
+    // Phase 13
+    packSDK, packRuntime, packManager,
+    hostingManager, deployPipeline, deployHistory, domainManager,
+    observabilityService, aiExtensions, deployPanel, DEPLOY_STATUS,
   });
 }
 
