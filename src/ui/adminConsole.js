@@ -47,7 +47,9 @@ export function init() {
 // ─── Open / Close ─────────────────────────────────────────────────────────────
 
 export function open(tab = 'overview') {
-  if (!orgService.hasRole(ROLES.ADMIN)) {
+  // Allow access if no org is set up (dev/demo mode) — role check only applies when org exists
+  const hasOrg = !!orgService.getActiveOrg?.();
+  if (hasOrg && !orgService.hasRole(ROLES.ADMIN)) {
     _showToast('Admin access required.', 'error');
     return;
   }
