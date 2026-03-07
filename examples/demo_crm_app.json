@@ -1,0 +1,180 @@
+{
+  "_schemaType": "AppSchema",
+  "_schemaVersion": 1,
+  "id": "app_demo_crm",
+  "name": "Simple CRM",
+  "description": "A lightweight CRM for tracking contacts and deals.",
+  "version": "1.0.0",
+  "state": {
+    "global": [
+      { "id": "searchQuery",    "label": "Search Query",    "type": "string",  "defaultValue": "", "scope": "global" },
+      { "id": "selectedContact","label": "Selected Contact","type": "object",  "defaultValue": null, "scope": "global" },
+      { "id": "activeTab",      "label": "Active Tab",      "type": "string",  "defaultValue": "contacts", "scope": "global" }
+    ],
+    "page": [],
+    "derived": [
+      {
+        "id": "totalContacts",
+        "label": "Total Contacts",
+        "deps": [],
+        "expression": { "type": "count", "source": "data:contacts" }
+      },
+      {
+        "id": "openDeals",
+        "label": "Open Deals",
+        "deps": [],
+        "expression": {
+          "type": "count",
+          "source": "data:deals",
+          "condition": { "status": { "neq": "closed" } }
+        }
+      },
+      {
+        "id": "totalDealValue",
+        "label": "Total Deal Value",
+        "deps": [],
+        "expression": { "type": "sum", "source": "data:deals", "field": "value" }
+      }
+    ]
+  },
+  "collections": [
+    {
+      "_schemaType": "CollectionSchema",
+      "id": "contacts",
+      "name": "Contacts",
+      "fields": [
+        { "id": "name",    "label": "Name",    "type": "text",  "rules": { "required": true } },
+        { "id": "email",   "label": "Email",   "type": "email" },
+        { "id": "company", "label": "Company", "type": "text"  },
+        { "id": "status",  "label": "Status",  "type": "select", "defaultValue": "lead",
+          "rules": { "options": ["lead", "prospect", "customer", "churned"] } },
+        { "id": "phone",   "label": "Phone",   "type": "text"  }
+      ],
+      "seedData": [
+        { "_id": "c1", "name": "Alice Johnson",  "email": "alice@example.com",  "company": "Acme Corp",    "status": "customer", "phone": "+1 555 0101" },
+        { "_id": "c2", "name": "Bob Martinez",   "email": "bob@example.com",    "company": "Globex Inc",   "status": "prospect", "phone": "+1 555 0102" },
+        { "_id": "c3", "name": "Carol Williams", "email": "carol@example.com",  "company": "Initech",      "status": "lead",     "phone": "+1 555 0103" },
+        { "_id": "c4", "name": "David Chen",     "email": "david@example.com",  "company": "Umbrella Ltd", "status": "customer", "phone": "+1 555 0104" }
+      ]
+    },
+    {
+      "_schemaType": "CollectionSchema",
+      "id": "deals",
+      "name": "Deals",
+      "fields": [
+        { "id": "title",     "label": "Deal Title", "type": "text",   "rules": { "required": true } },
+        { "id": "value",     "label": "Value ($)",  "type": "number", "defaultValue": 0 },
+        { "id": "status",    "label": "Status",     "type": "select", "defaultValue": "open",
+          "rules": { "options": ["open", "won", "lost", "closed"] } },
+        { "id": "contactId", "label": "Contact",    "type": "relation" },
+        { "id": "closeDate", "label": "Close Date", "type": "date" }
+      ],
+      "seedData": [
+        { "_id": "d1", "title": "Enterprise License",  "value": 12000, "status": "open",   "contactId": "c1", "closeDate": null },
+        { "_id": "d2", "title": "Starter Package",     "value": 2500,  "status": "won",    "contactId": "c2", "closeDate": null },
+        { "_id": "d3", "title": "Consulting Services", "value": 8000,  "status": "open",   "contactId": "c4", "closeDate": null },
+        { "_id": "d4", "title": "Annual Renewal",      "value": 5000,  "status": "closed", "contactId": "c1", "closeDate": null }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "addContact",
+      "name": "Add Contact",
+      "steps": [
+        { "id": "s1", "type": "validate", "data": "payload",
+          "rules": { "name": { "required": true, "message": "Name is required" } } },
+        { "id": "s2", "type": "data.insert", "collection": "contacts", "record": {
+          "name": "payload.name", "email": "payload.email",
+          "company": "payload.company", "status": "payload.status"
+        }},
+        { "id": "s3", "type": "notify", "message": "Contact added", "notificationType": "success" }
+      ]
+    },
+    {
+      "id": "deleteContact",
+      "name": "Delete Contact",
+      "steps": [
+        { "id": "s1", "type": "data.delete", "collection": "contacts", "recordId": "payload.recordId" },
+        { "id": "s2", "type": "notify", "message": "Contact deleted", "notificationType": "info" }
+      ]
+    },
+    {
+      "id": "addDeal",
+      "name": "Add Deal",
+      "steps": [
+        { "id": "s1", "type": "validate", "data": "payload",
+          "rules": { "title": { "required": true, "message": "Deal title is required" } } },
+        { "id": "s2", "type": "data.insert", "collection": "deals", "record": {
+          "title": "payload.title", "value": "payload.value", "status": "open"
+        }},
+        { "id": "s3", "type": "notify", "message": "Deal added", "notificationType": "success" }
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "_schemaType": "AppPageSchema",
+      "id": "page_crm_dashboard",
+      "name": "CRM Dashboard",
+      "slug": "crm",
+      "mode": "app",
+      "layout": [
+        {
+          "componentId": "crm_stat_contacts",
+          "componentType": "stat-card",
+          "props": { "label": "Total Contacts", "variant": "default", "icon": "👥" },
+          "bindings": { "value": "state:derived.totalContacts" }
+        },
+        {
+          "componentId": "crm_stat_deals",
+          "componentType": "stat-card",
+          "props": { "label": "Open Deals", "variant": "warning", "icon": "💼" },
+          "bindings": { "value": "state:derived.openDeals" }
+        },
+        {
+          "componentId": "crm_stat_value",
+          "componentType": "stat-card",
+          "props": { "label": "Pipeline Value", "variant": "success", "icon": "💰", "unit": "$" },
+          "bindings": { "value": "state:derived.totalDealValue" }
+        },
+        {
+          "componentId": "crm_contacts_table",
+          "componentType": "table",
+          "props": {
+            "title": "Contacts",
+            "collection": "contacts",
+            "columns": [
+              { "id": "name",    "label": "Name" },
+              { "id": "email",   "label": "Email" },
+              { "id": "company", "label": "Company" },
+              { "id": "status",  "label": "Status", "type": "select" }
+            ],
+            "rowActions": [
+              { "label": "Delete", "actionId": "deleteContact", "variant": "danger" }
+            ]
+          },
+          "bindings": {}
+        },
+        {
+          "componentId": "crm_add_contact_form",
+          "componentType": "form",
+          "props": {
+            "title": "Add Contact",
+            "submitLabel": "Add Contact",
+            "submitAction": "addContact",
+            "fields": [
+              { "id": "name",    "label": "Name",    "type": "text",   "rules": { "required": true } },
+              { "id": "email",   "label": "Email",   "type": "email" },
+              { "id": "company", "label": "Company", "type": "text" },
+              { "id": "status",  "label": "Status",  "type": "select",
+                "rules": { "options": ["lead", "prospect", "customer"] }, "defaultValue": "lead" }
+            ]
+          },
+          "bindings": {}
+        }
+      ],
+      "onLoad": []
+    }
+  ]
+}

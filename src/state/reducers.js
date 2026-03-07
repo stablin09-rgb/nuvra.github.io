@@ -204,6 +204,56 @@ export function aiReducer(state = AI_INITIAL, action) {
   }
 }
 
+// ─── App Builder Reducer ─────────────────────────────────────────────────────
+// Tracks the App Builder state: which AppSchema is loaded, the active runtime
+// mode, and the list of app schemas the user has created.
+const APP_INITIAL = {
+  schemas:       {},    // { [appId]: AppSchema } — all app schemas
+  activeAppId:   null,  // currently open app schema in the editor
+  runtimeMode:   null,  // 'preview' | 'publish' | null
+  runtimeReady:  false, // true when AppRuntime has booted
+};
+
+export function appReducer(state = APP_INITIAL, action) {
+  switch (action.type) {
+    case 'APP/SET_SCHEMA': {
+      const schema = action.payload;
+      return {
+        ...state,
+        schemas: { ...state.schemas, [schema.id]: schema },
+        activeAppId: schema.id,
+      };
+    }
+    case 'APP/UPDATE_SCHEMA': {
+      const { id, changes } = action.payload;
+      if (!state.schemas[id]) return state;
+      return {
+        ...state,
+        schemas: {
+          ...state.schemas,
+          [id]: { ...state.schemas[id], ...changes, updatedAt: Date.now() },
+        },
+      };
+    }
+    case 'APP/REMOVE_SCHEMA': {
+      const { [action.payload]: _removed, ...rest } = state.schemas;
+      return {
+        ...state,
+        schemas:     rest,
+        activeAppId: state.activeAppId === action.payload ? null : state.activeAppId,
+      };
+    }
+    case 'APP/SET_ACTIVE':
+      return { ...state, activeAppId: action.payload };
+    case 'APP/SET_RUNTIME_MODE':
+      return { ...state, runtimeMode: action.payload, runtimeReady: false };
+    case 'APP/SET_RUNTIME_READY':
+      return { ...state, runtimeReady: action.payload };
+    default:
+      return state;
+  }
+}
+
 // ─── Root Reducer ─────────────────────────────────────────────────────────────
 /**
  * Combines all slice reducers into a single root reducer.
@@ -218,6 +268,7 @@ export function rootReducer(state = {}, action) {
     ui:     uiReducer(state.ui,     action),
     flags:  flagsReducer(state.flags,  action),
     ai:     aiReducer(state.ai,     action),
+    app:    appReducer(state.app,    action),
   };
 }
 

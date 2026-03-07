@@ -1,0 +1,255 @@
+{
+  "_schemaType": "AppSchema",
+  "_schemaVersion": 1,
+  "id": "app_demo_tasks",
+  "name": "Task Manager",
+  "description": "A simple task management app. Create, filter, and complete tasks.",
+  "version": "1.0.0",
+  "state": {
+    "global": [
+      {
+        "_schemaType": "StateVarSchema",
+        "id": "newTaskTitle",
+        "label": "New Task Title",
+        "type": "string",
+        "defaultValue": "",
+        "scope": "global"
+      },
+      {
+        "_schemaType": "StateVarSchema",
+        "id": "filterStatus",
+        "label": "Filter: Status",
+        "type": "string",
+        "defaultValue": null,
+        "scope": "global"
+      }
+    ],
+    "page": [],
+    "derived": [
+      {
+        "_schemaType": "DerivedStateSchema",
+        "id": "totalTasks",
+        "label": "Total Tasks",
+        "deps": [],
+        "expression": { "type": "count", "source": "data:tasks" }
+      },
+      {
+        "_schemaType": "DerivedStateSchema",
+        "id": "completedCount",
+        "label": "Completed Tasks",
+        "deps": [],
+        "expression": {
+          "type": "count",
+          "source": "data:tasks",
+          "condition": { "done": { "eq": true } }
+        }
+      }
+    ]
+  },
+  "collections": [
+    {
+      "_schemaType": "CollectionSchema",
+      "id": "tasks",
+      "name": "Tasks",
+      "description": "The main task list",
+      "fields": [
+        {
+          "_schemaType": "FieldSchema",
+          "id": "title",
+          "label": "Title",
+          "type": "text",
+          "rules": { "required": true, "minLength": 1, "maxLength": 200 }
+        },
+        {
+          "_schemaType": "FieldSchema",
+          "id": "done",
+          "label": "Done",
+          "type": "boolean",
+          "defaultValue": false
+        },
+        {
+          "_schemaType": "FieldSchema",
+          "id": "priority",
+          "label": "Priority",
+          "type": "select",
+          "defaultValue": "medium",
+          "rules": { "options": ["low", "medium", "high"] }
+        },
+        {
+          "_schemaType": "FieldSchema",
+          "id": "dueDate",
+          "label": "Due Date",
+          "type": "date",
+          "defaultValue": null
+        }
+      ],
+      "seedData": [
+        { "_id": "task_1", "title": "Set up Nuvra project", "done": true,  "priority": "high",   "dueDate": null },
+        { "_id": "task_2", "title": "Design the data model",  "done": true,  "priority": "high",   "dueDate": null },
+        { "_id": "task_3", "title": "Build the UI components","done": false, "priority": "medium", "dueDate": null },
+        { "_id": "task_4", "title": "Write documentation",    "done": false, "priority": "low",    "dueDate": null },
+        { "_id": "task_5", "title": "Deploy to production",   "done": false, "priority": "high",   "dueDate": null }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "_schemaType": "ActionSchema",
+      "id": "createTask",
+      "name": "Create Task",
+      "description": "Validates the new task title and inserts a record",
+      "steps": [
+        {
+          "id": "step_validate",
+          "type": "validate",
+          "data": "payload",
+          "rules": { "title": { "required": true, "message": "Task title is required" } },
+          "errorsPath": "global.formErrors"
+        },
+        {
+          "id": "step_insert",
+          "type": "data.insert",
+          "collection": "tasks",
+          "record": {
+            "title":    "payload.title",
+            "done":     false,
+            "priority": "payload.priority"
+          }
+        },
+        {
+          "id": "step_clear",
+          "type": "state.set",
+          "path": "global.newTaskTitle",
+          "value": ""
+        },
+        {
+          "id": "step_notify",
+          "type": "notify",
+          "message": "Task created",
+          "notificationType": "success",
+          "duration": 2000
+        }
+      ]
+    },
+    {
+      "_schemaType": "ActionSchema",
+      "id": "toggleTask",
+      "name": "Toggle Task Done",
+      "description": "Flips the done status of a task",
+      "steps": [
+        {
+          "id": "step_toggle",
+          "type": "data.update",
+          "collection": "tasks",
+          "recordId": "payload.recordId",
+          "patch": { "done": "payload.done" }
+        }
+      ]
+    },
+    {
+      "_schemaType": "ActionSchema",
+      "id": "deleteTask",
+      "name": "Delete Task",
+      "description": "Deletes a task record",
+      "steps": [
+        {
+          "id": "step_delete",
+          "type": "data.delete",
+          "collection": "tasks",
+          "recordId": "payload.recordId"
+        },
+        {
+          "id": "step_notify",
+          "type": "notify",
+          "message": "Task deleted",
+          "notificationType": "info",
+          "duration": 2000
+        }
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "_schemaType": "AppPageSchema",
+      "id": "page_tasks",
+      "name": "Tasks",
+      "slug": "tasks",
+      "mode": "app",
+      "description": "The main task list page",
+      "layout": [
+        {
+          "_schemaType": "ComponentRefSchema",
+          "componentId": "comp_stats_total",
+          "componentType": "stat-card",
+          "props": {
+            "label": "Total Tasks",
+            "variant": "default"
+          },
+          "bindings": { "value": "state:derived.totalTasks" }
+        },
+        {
+          "_schemaType": "ComponentRefSchema",
+          "componentId": "comp_stats_done",
+          "componentType": "stat-card",
+          "props": {
+            "label": "Completed",
+            "variant": "success"
+          },
+          "bindings": { "value": "state:derived.completedCount" }
+        },
+        {
+          "_schemaType": "ComponentRefSchema",
+          "componentId": "comp_filter",
+          "componentType": "filter",
+          "props": {
+            "filters": [
+              {
+                "id": "status",
+                "label": "Status",
+                "type": "select",
+                "options": ["done", "pending"],
+                "statePath": "global.filterStatus"
+              }
+            ]
+          },
+          "bindings": {}
+        },
+        {
+          "_schemaType": "ComponentRefSchema",
+          "componentId": "comp_task_form",
+          "componentType": "form",
+          "props": {
+            "title": "Add a Task",
+            "submitLabel": "Add Task",
+            "submitAction": "createTask",
+            "fields": [
+              { "id": "title",    "label": "Title",    "type": "text",   "rules": { "required": true } },
+              { "id": "priority", "label": "Priority", "type": "select", "rules": { "options": ["low", "medium", "high"] }, "defaultValue": "medium" }
+            ]
+          },
+          "bindings": {}
+        },
+        {
+          "_schemaType": "ComponentRefSchema",
+          "componentId": "comp_task_list",
+          "componentType": "list",
+          "props": {
+            "title": "Tasks",
+            "collection": "tasks",
+            "emptyMessage": "No tasks yet. Add one above.",
+            "itemTemplate": {
+              "titleField":    "title",
+              "badgeField":    "priority",
+              "badgeColorField": "priority"
+            },
+            "itemActions": [
+              { "label": "Delete", "actionId": "deleteTask", "variant": "danger" }
+            ]
+          },
+          "bindings": {}
+        }
+      ],
+      "onLoad": []
+    }
+  ]
+}

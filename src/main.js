@@ -1,5 +1,5 @@
 /**
- * main.js — Nuvra Phase 2–2.5
+ * main.js — Nuvra Phase 3
  *
  * The application boot sequence.
  *
@@ -14,6 +14,11 @@
  *  8. Wire save-requested event
  *  9. Wire online/offline detection
  * 10. Mark as booted
+ *
+ * Phase 3 additions:
+ *  - AppRuntime is registered as a module
+ *  - AppRuntime boots when an AppSchema is present in state
+ *  - Editor shell gains an App Builder panel
  *
  * @module main
  */
@@ -30,12 +35,13 @@ import { errorBoundary, ErrorSeverity } from './diagnostics/errorBoundary.js';
 import { toastManager }   from './ui/controls/toast.js';
 import { planningEngine } from './ai/planningEngine.js';
 import { aiAdapter, OpenAIProvider } from './ai/adapter/aiAdapter.js';
+import { AppRuntime }     from './app/runtime/appRuntime.js';
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 async function boot() {
   // ── Step 1: Install global error handlers ──────────────────────────────────
   errorBoundary.installGlobalHandlers();
-  logger.info('main', 'Nuvra booting (Phase 2–2.5)…');
+  logger.info('main', 'Nuvra booting (Phase 3)…');
 
   // ── Step 2: Initialize the Core Runtime ────────────────────────────────────
   runtime.init();
@@ -64,8 +70,6 @@ async function boot() {
   }
 
   // ── Step 4: Configure AI adapter ───────────────────────────────────────────
-  // In the browser, set window.NUVRA_OPENAI_KEY before the page loads.
-  // In Node (tests), set OPENAI_API_KEY in the environment.
   const apiKey = (typeof window !== 'undefined' && window.NUVRA_OPENAI_KEY)
     || (typeof process !== 'undefined' ? process.env?.OPENAI_API_KEY : null)
     || null;
@@ -109,10 +113,44 @@ async function boot() {
     window.addEventListener('offline', () => store.dispatch({ type: 'FLAGS/SET_ONLINE', payload: false }));
   }
 
-  // ── Step 10: Mark as booted ────────────────────────────────────────────────
+  // ── Step 10: Wire App Runtime activation ───────────────────────────────────
+  // When the editor activates an App page, boot the AppRuntime for that page.
+  eventBus.on('app:runtime:boot', async ({ appSchema, mountEl, mode }) => {
+    if (!appSchema || !mountEl) {
+      logger.warn('main', 'app:runtime:boot received without appSchema or mountEl');
+      return;
+    }
+    try {
+      const appRuntime = new AppRuntime({ appSchema, mountEl, mode: mode || 'preview' });
+      await appRuntime.boot();
+      logger.info('main', `AppRuntime booted for app "${appSchema.name}" in ${mode || 'preview'} mode`);
+
+      // Store the runtime reference on the mount element for teardown
+      mountEl._nuvraAppRuntime = appRuntime;
+
+      eventBus.emit('app:runtime:ready', { appId: appSchema.id });
+    } catch (err) {
+      errorBoundary.capture(err, {
+        module:   'appRuntime',
+        context:  'boot',
+        severity: ErrorSeverity.HIGH,
+      });
+    }
+  });
+
+  // Teardown when the editor navigates away from an App page
+  eventBus.on('app:runtime:teardown', ({ mountEl }) => {
+    if (mountEl?._nuvraAppRuntime) {
+      mountEl._nuvraAppRuntime.teardown();
+      delete mountEl._nuvraAppRuntime;
+      logger.info('main', 'AppRuntime torn down');
+    }
+  });
+
+  // ── Step 11: Mark as booted ────────────────────────────────────────────────
   store.dispatch({ type: 'FLAGS/SET_BOOTED' });
   eventBus.emit('app:booted', { ts: Date.now() });
-  logger.info('main', 'Nuvra booted successfully (Phase 2–2.5)');
+  logger.info('main', 'Nuvra booted successfully (Phase 3)');
 }
 
 // ─── Entry Point ──────────────────────────────────────────────────────────────

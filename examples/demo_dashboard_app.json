@@ -1,0 +1,144 @@
+{
+  "_schemaType": "AppSchema",
+  "_schemaVersion": 1,
+  "id": "app_demo_dashboard",
+  "name": "Analytics Dashboard",
+  "description": "A read-only analytics dashboard showing key business metrics.",
+  "version": "1.0.0",
+  "state": {
+    "global": [
+      { "id": "dateRange", "label": "Date Range", "type": "string", "defaultValue": "30d", "scope": "global" }
+    ],
+    "page": [],
+    "derived": [
+      {
+        "id": "totalRevenue",
+        "label": "Total Revenue",
+        "deps": [],
+        "expression": { "type": "sum", "source": "data:orders", "field": "amount" }
+      },
+      {
+        "id": "totalOrders",
+        "label": "Total Orders",
+        "deps": [],
+        "expression": { "type": "count", "source": "data:orders" }
+      },
+      {
+        "id": "activeUsers",
+        "label": "Active Users",
+        "deps": [],
+        "expression": {
+          "type": "count",
+          "source": "data:users",
+          "condition": { "status": { "eq": "active" } }
+        }
+      }
+    ]
+  },
+  "collections": [
+    {
+      "_schemaType": "CollectionSchema",
+      "id": "orders",
+      "name": "Orders",
+      "fields": [
+        { "id": "orderId",  "label": "Order ID",  "type": "text" },
+        { "id": "customer", "label": "Customer",  "type": "text" },
+        { "id": "amount",   "label": "Amount",    "type": "number" },
+        { "id": "status",   "label": "Status",    "type": "select",
+          "rules": { "options": ["pending", "completed", "refunded"] } },
+        { "id": "date",     "label": "Date",      "type": "date" }
+      ],
+      "seedData": [
+        { "_id": "o1", "orderId": "ORD-001", "customer": "Alice Johnson",  "amount": 249.99, "status": "completed", "date": "2026-02-01" },
+        { "_id": "o2", "orderId": "ORD-002", "customer": "Bob Martinez",   "amount": 89.00,  "status": "completed", "date": "2026-02-03" },
+        { "_id": "o3", "orderId": "ORD-003", "customer": "Carol Williams", "amount": 499.00, "status": "pending",   "date": "2026-02-10" },
+        { "_id": "o4", "orderId": "ORD-004", "customer": "David Chen",     "amount": 149.50, "status": "completed", "date": "2026-02-15" },
+        { "_id": "o5", "orderId": "ORD-005", "customer": "Eve Thompson",   "amount": 320.00, "status": "refunded",  "date": "2026-02-20" }
+      ]
+    },
+    {
+      "_schemaType": "CollectionSchema",
+      "id": "users",
+      "name": "Users",
+      "fields": [
+        { "id": "name",   "label": "Name",   "type": "text" },
+        { "id": "email",  "label": "Email",  "type": "email" },
+        { "id": "status", "label": "Status", "type": "select",
+          "rules": { "options": ["active", "inactive", "suspended"] } },
+        { "id": "plan",   "label": "Plan",   "type": "select",
+          "rules": { "options": ["free", "pro", "enterprise"] } }
+      ],
+      "seedData": [
+        { "_id": "u1", "name": "Alice Johnson",  "email": "alice@example.com",  "status": "active",   "plan": "enterprise" },
+        { "_id": "u2", "name": "Bob Martinez",   "email": "bob@example.com",    "status": "active",   "plan": "pro" },
+        { "_id": "u3", "name": "Carol Williams", "email": "carol@example.com",  "status": "inactive", "plan": "free" },
+        { "_id": "u4", "name": "David Chen",     "email": "david@example.com",  "status": "active",   "plan": "pro" },
+        { "_id": "u5", "name": "Eve Thompson",   "email": "eve@example.com",    "status": "suspended","plan": "free" }
+      ]
+    }
+  ],
+  "actions": [],
+  "pages": [
+    {
+      "_schemaType": "AppPageSchema",
+      "id": "page_dashboard",
+      "name": "Dashboard",
+      "slug": "dashboard",
+      "mode": "app",
+      "layout": [
+        {
+          "componentId": "dash_stat_revenue",
+          "componentType": "stat-card",
+          "props": { "label": "Total Revenue", "variant": "success", "icon": "💰", "unit": "$" },
+          "bindings": { "value": "state:derived.totalRevenue" }
+        },
+        {
+          "componentId": "dash_stat_orders",
+          "componentType": "stat-card",
+          "props": { "label": "Total Orders", "variant": "default", "icon": "📦" },
+          "bindings": { "value": "state:derived.totalOrders" }
+        },
+        {
+          "componentId": "dash_stat_users",
+          "componentType": "stat-card",
+          "props": { "label": "Active Users", "variant": "default", "icon": "👥" },
+          "bindings": { "value": "state:derived.activeUsers" }
+        },
+        {
+          "componentId": "dash_orders_table",
+          "componentType": "table",
+          "props": {
+            "title": "Recent Orders",
+            "collection": "orders",
+            "columns": [
+              { "id": "orderId",  "label": "Order ID" },
+              { "id": "customer", "label": "Customer" },
+              { "id": "amount",   "label": "Amount ($)" },
+              { "id": "status",   "label": "Status", "type": "select" },
+              { "id": "date",     "label": "Date",   "type": "date" }
+            ],
+            "rowActions": []
+          },
+          "bindings": {}
+        },
+        {
+          "componentId": "dash_users_table",
+          "componentType": "table",
+          "props": {
+            "title": "Users",
+            "collection": "users",
+            "columns": [
+              { "id": "name",   "label": "Name" },
+              { "id": "email",  "label": "Email" },
+              { "id": "status", "label": "Status", "type": "select" },
+              { "id": "plan",   "label": "Plan",   "type": "select" }
+            ],
+            "rowActions": []
+          },
+          "bindings": {}
+        }
+      ],
+      "onLoad": []
+    }
+  ]
+}
