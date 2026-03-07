@@ -639,10 +639,10 @@ async function boot() {
     if (typeof agentConsole.init === 'function') agentConsole.init();
     // Wire the Generate button to open the agent console
     const generateBtn = document.querySelector('[hint="Generate with AI"]');
-    if (generateBtn && typeof agentConsole.show === 'function') {
+    if (generateBtn && typeof agentConsole.open === 'function') {
       generateBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        agentConsole.show();
+        agentConsole.open();
       });
     }
   });
