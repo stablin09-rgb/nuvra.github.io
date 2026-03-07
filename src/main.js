@@ -93,6 +93,20 @@ import * as aiApiModule          from './extensions/api/aiApi.js';
 import * as marketplaceManager   from './marketplace/marketplaceManager.js';
 import * as marketplaceUI        from './marketplace/marketplaceUI.js';
 
+// ─── Phase 11: Cloud Marketplace & Blueprint Economy ─────────────────────────
+import { marketplaceService }  from './cloud/marketplaceService.js';
+import { assetRegistry }       from './cloud/assetRegistry.js';
+import { licenseEngine }       from './cloud/licenseEngine.js';
+import { revenueEngine as revenueEngine11 } from './cloud/revenueEngine.js';
+import { analyticsService }    from './cloud/analyticsService.js';
+import { versionResolver }     from './cloud/versionResolver.js';
+import { creatorService }      from './cloud/creatorService.js';
+import { trustEngine }         from './governance/trust/trustEngine.js';
+import { blueprintRegistry }   from './blueprints/blueprintRegistry.js';
+import { blueprintInstaller }  from './blueprints/blueprintInstaller.js';
+import { marketplaceAdvisor }  from './ai/marketplaceAdvisor.js';
+import { marketplaceStore }    from './ui/marketplaceStore.js';
+
 // ─── Helper ───────────────────────────────────────────────────────────────────
 function _getEnvVar(name) {
   if (typeof window !== 'undefined' && window.NUVRA_ENV_VARS?.[name]) {
@@ -428,6 +442,48 @@ async function boot() {
 
   logger.info('main', 'Phase 10 modules registered');
 
+  // ── Phase 11: Cloud Marketplace & Blueprint Economy ────────────────────────
+  _try('P11 assetRegistry init', () => {
+    if (typeof assetRegistry.init === 'function') assetRegistry.init();
+  });
+  _try('P11 analyticsService init', () => {
+    if (typeof analyticsService.init === 'function') analyticsService.init();
+  });
+  _try('P11 marketplaceService init', () => {
+    if (typeof marketplaceService.init === 'function') marketplaceService.init();
+  });
+  _try('P11 marketplaceStore init', () => {
+    // Initialize the Phase 11 full marketplace store (creates the overlay panel)
+    const authState = store.getState()?.auth || {};
+    marketplaceStore.init({
+      userId:    authState.userId || 'guest',
+      projectId: store.getState()?.editor?.activePageId || 'default',
+      userPlan:  authState.plan || 'free',
+    });
+    // Wire the MARKETPLACE tab button in the sidebar to open the store
+    const mpTabBtn = document.querySelector('[data-tab="marketplace"], #nv-sidebar [role="tab"]:nth-child(4)');
+    if (mpTabBtn) {
+      mpTabBtn.addEventListener('click', () => marketplaceStore.open());
+    }
+    // Also wire the Generate button's marketplace option if present
+    const mpBtn = document.getElementById('nv-marketplace-btn');
+    if (mpBtn) mpBtn.addEventListener('click', () => marketplaceStore.open());
+  });
+  _registerModule('marketplaceService', marketplaceService);
+  _registerModule('assetRegistry', assetRegistry);
+  _registerModule('licenseEngine', licenseEngine);
+  _registerModule('revenueEngine11', revenueEngine11);
+  _registerModule('analyticsService', analyticsService);
+  _registerModule('versionResolver', versionResolver);
+  _registerModule('creatorService', creatorService);
+  _registerModule('trustEngine', trustEngine);
+  _registerModule('blueprintRegistry', blueprintRegistry);
+  _registerModule('blueprintInstaller', blueprintInstaller);
+  _registerModule('marketplaceAdvisor', marketplaceAdvisor);
+  _registerModule('marketplaceStore', marketplaceStore);
+
+  logger.info('main', 'Phase 11 modules registered');
+
   // ── Step 25: Start all modules ─────────────────────────────────────────────
   _try('runtime.start', () => runtime.start());
 
@@ -515,7 +571,7 @@ async function boot() {
 
   // ── Step 38: Mark as booted ────────────────────────────────────────────────
   store.dispatch({ type: 'APP/SET_BOOTED', payload: true });
-  logger.info('main', 'Nuvra booted (Phase 10).');
+  logger.info('main', 'Nuvra booted (Phase 11).');
 
   // ── Debug handles ──────────────────────────────────────────────────────────
   Object.assign(window, {
@@ -528,6 +584,10 @@ async function boot() {
     mobileReadinessDashboard, mobilePolicyEngine,
     p10ExtensionRegistry, extensionHost, extensionLoader,
     marketplaceManager, marketplaceUI,
+    // Phase 11
+    marketplaceService, assetRegistry, licenseEngine, revenueEngine11,
+    analyticsService, versionResolver, creatorService, trustEngine,
+    blueprintRegistry, blueprintInstaller, marketplaceAdvisor, marketplaceStore,
   });
 }
 

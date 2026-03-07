@@ -1,0 +1,745 @@
+.nv-mp-store {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: min(900px, 100vw);
+  height: 100vh;
+  background: #1a1a2e;
+  border-left: 1px solid #2d2d4a;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.5);
+}
+
+.nv-mp-store.open {
+  right: 0;
+}
+
+.nv-mp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: none;
+  backdrop-filter: blur(2px);
+}
+
+.nv-mp-store.open ~ .nv-mp-overlay,
+.nv-mp-overlay:has(~ .nv-mp-store.open) {
+  display: block;
+}
+
+/* ── Store Header ──────────────────────────────────────────────────────── */
+
+.nv-mp-store-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #2d2d4a;
+  background: #16213e;
+  flex-shrink: 0;
+}
+
+.nv-mp-store-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #e2e8f0;
+  white-space: nowrap;
+}
+
+.nv-mp-store-icon {
+  font-size: 22px;
+}
+
+.nv-mp-store-search {
+  flex: 1;
+}
+
+.nv-mp-store-search input {
+  width: 100%;
+  padding: 8px 14px;
+  background: #0f3460;
+  border: 1px solid #2d2d4a;
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.nv-mp-store-search input:focus {
+  border-color: #6366f1;
+}
+
+.nv-mp-store-search input::placeholder {
+  color: #64748b;
+}
+
+.nv-mp-store-close {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.nv-mp-store-close:hover {
+  color: #e2e8f0;
+  background: #2d2d4a;
+}
+
+/* ── Tabs ──────────────────────────────────────────────────────────────── */
+
+.nv-mp-store-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 20px 0;
+  border-bottom: 1px solid #2d2d4a;
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nv-mp-store-tabs::-webkit-scrollbar { display: none; }
+
+.nv-mp-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.nv-mp-tab:hover {
+  color: #a5b4fc;
+}
+
+.nv-mp-tab.active {
+  color: #6366f1;
+  border-bottom-color: #6366f1;
+}
+
+/* ── Filters ───────────────────────────────────────────────────────────── */
+
+.nv-mp-store-filters {
+  display: none;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid #2d2d4a;
+  flex-shrink: 0;
+}
+
+.nv-mp-store-filters select {
+  padding: 6px 12px;
+  background: #0f3460;
+  border: 1px solid #2d2d4a;
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* ── Body ──────────────────────────────────────────────────────────────── */
+
+.nv-mp-store-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  scrollbar-width: thin;
+  scrollbar-color: #2d2d4a transparent;
+}
+
+.nv-mp-store-body::-webkit-scrollbar { width: 6px; }
+.nv-mp-store-body::-webkit-scrollbar-track { background: transparent; }
+.nv-mp-store-body::-webkit-scrollbar-thumb { background: #2d2d4a; border-radius: 3px; }
+
+/* ── Section ───────────────────────────────────────────────────────────── */
+
+.nv-mp-section {
+  margin-bottom: 32px;
+}
+
+.nv-mp-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0 0 16px;
+}
+
+.nv-mp-section-desc {
+  font-size: 13px;
+  color: #94a3b8;
+  margin: 0 0 16px;
+  line-height: 1.6;
+}
+
+/* ── Asset Grid ────────────────────────────────────────────────────────── */
+
+.nv-mp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+/* ── Asset Card ────────────────────────────────────────────────────────── */
+
+.nv-mp-card {
+  background: #16213e;
+  border: 1px solid #2d2d4a;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+
+.nv-mp-card:hover {
+  border-color: #6366f1;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+}
+
+.nv-mp-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nv-mp-card-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.nv-mp-card-desc {
+  font-size: 13px;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.nv-mp-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #64748b;
+  flex-wrap: wrap;
+}
+
+.nv-mp-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+/* ── Blueprint Card ────────────────────────────────────────────────────── */
+
+.nv-mp-blueprint-card {
+  border-color: #4f46e5;
+}
+
+.nv-mp-blueprint-card:hover {
+  border-color: #818cf8;
+}
+
+/* ── Type Badges ───────────────────────────────────────────────────────── */
+
+.nv-mp-type-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.nv-mp-type-badge.template    { background: #1e3a5f; color: #60a5fa; }
+.nv-mp-type-badge.plugin      { background: #1e3a2f; color: #4ade80; }
+.nv-mp-type-badge.integration { background: #3a1e3a; color: #c084fc; }
+.nv-mp-type-badge.ai-pack     { background: #3a2a1e; color: #fb923c; }
+.nv-mp-type-badge.blueprint   { background: #1e2a3a; color: #38bdf8; }
+.nv-mp-type-badge.component   { background: #2a1e3a; color: #a78bfa; }
+
+/* ── Price Badges ──────────────────────────────────────────────────────── */
+
+.nv-mp-price-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: auto;
+}
+
+.nv-mp-price-badge.free { background: #14532d; color: #4ade80; }
+.nv-mp-price-badge.paid { background: #451a03; color: #fb923c; }
+
+/* ── Trust Badges ──────────────────────────────────────────────────────── */
+
+.nv-mp-trust-badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.nv-mp-trust-verified   { background: #1e3a2f; color: #4ade80; }
+.nv-mp-trust-trusted    { background: #1e2a3a; color: #60a5fa; }
+.nv-mp-trust-basic      { background: #2a2a2a; color: #94a3b8; }
+.nv-mp-trust-unverified { background: #3a1e1e; color: #f87171; }
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+
+.nv-mp-btn-primary {
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  flex: 1;
+}
+
+.nv-mp-btn-primary:hover:not(:disabled) { background: #4f46e5; }
+.nv-mp-btn-primary:active { transform: scale(0.97); }
+.nv-mp-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.nv-mp-btn-secondary {
+  background: #2d2d4a;
+  color: #94a3b8;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex: 1;
+}
+
+.nv-mp-btn-secondary:hover:not(:disabled) { background: #3d3d5a; }
+.nv-mp-btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.nv-mp-btn-ghost {
+  background: none;
+  color: #64748b;
+  border: 1px solid #2d2d4a;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.nv-mp-btn-ghost:hover { color: #e2e8f0; border-color: #4d4d6a; }
+
+.nv-mp-btn-danger {
+  background: #7f1d1d;
+  color: #fca5a5;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.nv-mp-btn-danger:hover { background: #991b1b; }
+
+/* ── Installed Tab ─────────────────────────────────────────────────────── */
+
+.nv-mp-installed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nv-mp-installed-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #16213e;
+  border: 1px solid #2d2d4a;
+  border-radius: 8px;
+  gap: 12px;
+}
+
+.nv-mp-installed-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.nv-mp-version {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.nv-mp-verified {
+  font-size: 12px;
+  color: #4ade80;
+}
+
+/* ── Creator Tab ───────────────────────────────────────────────────────── */
+
+.nv-mp-creator-register {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 32px 0;
+}
+
+.nv-mp-creator-register h3 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0 0 12px;
+}
+
+.nv-mp-creator-register p {
+  font-size: 14px;
+  color: #94a3b8;
+  margin: 0 0 24px;
+  line-height: 1.6;
+}
+
+.nv-mp-creator-register form,
+#nv-mp-draft-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nv-mp-creator-register input,
+.nv-mp-creator-register select,
+.nv-mp-creator-register textarea,
+#nv-mp-draft-form input,
+#nv-mp-draft-form select,
+#nv-mp-draft-form textarea {
+  padding: 10px 14px;
+  background: #0f3460;
+  border: 1px solid #2d2d4a;
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  resize: vertical;
+}
+
+.nv-mp-creator-register input:focus,
+.nv-mp-creator-register textarea:focus,
+#nv-mp-draft-form input:focus,
+#nv-mp-draft-form textarea:focus {
+  border-color: #6366f1;
+}
+
+.nv-mp-creator-dashboard {}
+
+.nv-mp-creator-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.nv-mp-creator-header h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0 0 4px;
+}
+
+.nv-mp-creator-tier {
+  font-size: 12px;
+  color: #6366f1;
+  font-weight: 500;
+}
+
+.nv-mp-creator-stats {
+  display: flex;
+  gap: 20px;
+}
+
+.nv-mp-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.nv-mp-stat strong {
+  font-size: 22px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.nv-mp-stat span {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.nv-mp-creator-actions {
+  margin-bottom: 24px;
+}
+
+.nv-mp-draft-item,
+.nv-mp-published-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #16213e;
+  border: 1px solid #2d2d4a;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.nv-mp-draft-status {
+  font-size: 12px;
+  color: #64748b;
+  text-transform: capitalize;
+  margin-left: auto;
+}
+
+/* ── Asset Detail Modal ────────────────────────────────────────────────── */
+
+.nv-mp-detail-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 11000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.nv-mp-detail-content {
+  background: #1a1a2e;
+  border: 1px solid #2d2d4a;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 560px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  scrollbar-width: thin;
+  scrollbar-color: #2d2d4a transparent;
+}
+
+.nv-mp-detail-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.nv-mp-detail-close:hover {
+  color: #e2e8f0;
+  background: #2d2d4a;
+}
+
+.nv-mp-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.nv-mp-detail-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0;
+  flex: 1;
+}
+
+.nv-mp-detail-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 16px 0;
+  padding: 16px;
+  background: #16213e;
+  border-radius: 8px;
+}
+
+.nv-mp-detail-meta div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nv-mp-detail-meta strong {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.nv-mp-detail-meta span {
+  font-size: 14px;
+  color: #e2e8f0;
+}
+
+.nv-mp-detail-permissions {
+  margin: 16px 0;
+  padding: 14px;
+  background: #1e1e3a;
+  border: 1px solid #3d3d5a;
+  border-radius: 8px;
+}
+
+.nv-mp-detail-permissions strong {
+  font-size: 13px;
+  color: #94a3b8;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.nv-mp-detail-permissions ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #e2e8f0;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.nv-mp-detail-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* ── Blueprint Config Form ─────────────────────────────────────────────── */
+
+.nv-mp-config-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.nv-mp-config-field label {
+  font-size: 13px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.nv-mp-config-field input {
+  padding: 8px 12px;
+  background: #0f3460;
+  border: 1px solid #2d2d4a;
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 14px;
+  outline: none;
+}
+
+.nv-mp-config-field input:focus {
+  border-color: #6366f1;
+}
+
+.nv-mp-blueprint-progress {
+  margin: 16px 0;
+}
+
+.nv-mp-progress-bar {
+  height: 6px;
+  background: #2d2d4a;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.nv-mp-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #818cf8);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+/* ── Empty States ──────────────────────────────────────────────────────── */
+
+.nv-mp-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #64748b;
+}
+
+.nv-mp-empty-state p {
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+.nv-mp-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.nv-mp-empty {
+  color: #64748b;
+  font-size: 14px;
+  padding: 20px 0;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .nv-mp-store {
+    width: 100vw;
+  }
+
+  .nv-mp-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nv-mp-creator-header {
+    flex-direction: column;
+  }
+
+  .nv-mp-detail-meta {
+    grid-template-columns: 1fr;
+  }
+}
