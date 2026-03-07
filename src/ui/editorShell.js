@@ -1,4 +1,4 @@
-/**
+'''/**
  * editorShell.js — Nuvra Phase 2–2.5
  *
  * The Live Editor Shell.
@@ -189,9 +189,6 @@ export const editorShell = {
       this._renderMobileReadinessDashboard(newState);
     }
   },
-};
-
-export default editorShell;
 
   _renderMarketplaceCatalog(state) {
     const panelEl = document.getElementById('nv-marketplace-panel');
@@ -207,4 +204,7 @@ export default editorShell;
     const isOpen = state.ui?.panels?.['mobile'] || false;
     panelEl.classList.toggle('nv-panel-hidden', !isOpen);
     if (isOpen) mobileReadinessDashboard.render();
-  },
+  }
+};
+
+export default editorShell;'''

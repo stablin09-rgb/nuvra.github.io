@@ -1,0 +1,196 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-03-01T00:00:00Z",
+  "extensions": [
+
+    {
+      "id": "saas-landing-template",
+      "name": "SaaS Landing Page",
+      "version": "1.2.0",
+      "author": "Nuvra Team",
+      "type": "template",
+      "description": "A complete SaaS landing page with hero, features, pricing, testimonials, and CTA sections. Includes a pre-built data schema for pricing tiers.",
+      "longDescription": "Install this template to instantly create a professional SaaS landing page. Includes 6 pre-built pages (Home, Features, Pricing, Blog, About, Contact), a pricing tiers data collection, and a newsletter signup form.",
+      "category": "Templates",
+      "tags": ["saas", "landing", "marketing", "startup"],
+      "badges": ["mobile-ready"],
+      "screenshots": [],
+      "minNuvraVersion": "9.0.0",
+      "permissions": [
+        "project.pages.add",
+        "data.schema.write",
+        "editor.blocks.add",
+        "editor.styles.inject"
+      ],
+      "bundleUrl": "local:saas-landing-template",
+      "bundle": "// SaaS Landing Template Extension\n'use strict';\n\n(async () => {\n  // Add pricing tiers collection\n  await nuvra.data.addCollection({\n    name: 'pricing_tiers',\n    fields: [\n      { name: 'name',       type: 'text',    required: true },\n      { name: 'price',      type: 'number',  required: true },\n      { name: 'period',     type: 'text',    default: 'month' },\n      { name: 'features',   type: 'text',    required: false },\n      { name: 'is_popular', type: 'boolean', default: false },\n    ]\n  }).catch(() => {}); // Ignore if already exists\n\n  // Add hero block\n  await nuvra.editor.addBlock({\n    id:       'saas-hero',\n    label:    'SaaS Hero',\n    category: 'SaaS Landing',\n    content:  `<section style=\"background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);padding:100px 40px;text-align:center;color:#fff;\">\n  <h1 style=\"font-size:52px;font-weight:800;margin:0 0 20px;line-height:1.15;\">Build Faster.<br>Ship Smarter.</h1>\n  <p style=\"font-size:20px;color:rgba(255,255,255,0.75);max-width:560px;margin:0 auto 36px;\">The AI-powered platform for modern teams. From idea to production in minutes.</p>\n  <a href=\"#\" style=\"display:inline-block;background:#7c6af7;color:#fff;padding:16px 40px;border-radius:50px;font-size:16px;font-weight:600;text-decoration:none;\">Start Free Trial</a>\n</section>`\n  });\n\n  // Add pricing block\n  await nuvra.editor.addBlock({\n    id:       'saas-pricing',\n    label:    'Pricing Cards',\n    category: 'SaaS Landing',\n    content:  `<section style=\"padding:80px 40px;background:#f9f9fb;\">\n  <h2 style=\"text-align:center;font-size:36px;font-weight:700;margin:0 0 48px;\">Simple, Transparent Pricing</h2>\n  <div style=\"display:flex;gap:24px;max-width:900px;margin:auto;justify-content:center;flex-wrap:wrap;\">\n    <div style=\"background:#fff;border-radius:16px;padding:32px;flex:1;min-width:240px;box-shadow:0 4px 24px rgba(0,0,0,0.06);\">\n      <h3 style=\"margin:0 0 8px;font-size:20px;\">Starter</h3>\n      <p style=\"font-size:40px;font-weight:800;margin:0 0 24px;\">$0<span style=\"font-size:16px;font-weight:400;color:#888;\">/mo</span></p>\n      <ul style=\"list-style:none;padding:0;margin:0 0 24px;color:#555;line-height:2;\"><li>✓ 3 Projects</li><li>✓ 20 AI Generations</li><li>✓ Community Support</li></ul>\n      <a href=\"#\" style=\"display:block;text-align:center;border:2px solid #7c6af7;color:#7c6af7;padding:12px;border-radius:8px;font-weight:600;text-decoration:none;\">Get Started</a>\n    </div>\n    <div style=\"background:#7c6af7;border-radius:16px;padding:32px;flex:1;min-width:240px;box-shadow:0 8px 40px rgba(124,106,247,0.35);color:#fff;\">\n      <h3 style=\"margin:0 0 8px;font-size:20px;\">Pro</h3>\n      <p style=\"font-size:40px;font-weight:800;margin:0 0 24px;\">$29<span style=\"font-size:16px;font-weight:400;opacity:0.75;\">/mo</span></p>\n      <ul style=\"list-style:none;padding:0;margin:0 0 24px;opacity:0.9;line-height:2;\"><li>✓ 20 Projects</li><li>✓ 500k AI Tokens</li><li>✓ Cloud Publish</li><li>✓ Priority Support</li></ul>\n      <a href=\"#\" style=\"display:block;text-align:center;background:#fff;color:#7c6af7;padding:12px;border-radius:8px;font-weight:600;text-decoration:none;\">Start Pro Trial</a>\n    </div>\n  </div>\n</section>`\n  });\n\n  // Add features block\n  await nuvra.editor.addBlock({\n    id:       'saas-features',\n    label:    'Feature Grid',\n    category: 'SaaS Landing',\n    content:  `<section style=\"padding:80px 40px;\">\n  <h2 style=\"text-align:center;font-size:36px;font-weight:700;margin:0 0 48px;\">Everything You Need</h2>\n  <div style=\"display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:28px;max-width:1000px;margin:auto;\">\n    <div style=\"padding:28px;border-radius:12px;border:1px solid #f0f0f0;\">\n      <div style=\"font-size:32px;margin-bottom:12px;\">⚡</div>\n      <h3 style=\"margin:0 0 8px;font-size:18px;\">Lightning Fast</h3>\n      <p style=\"color:#666;margin:0;line-height:1.6;\">Built for performance from the ground up.</p>\n    </div>\n    <div style=\"padding:28px;border-radius:12px;border:1px solid #f0f0f0;\">\n      <div style=\"font-size:32px;margin-bottom:12px;\">🤖</div>\n      <h3 style=\"margin:0 0 8px;font-size:18px;\">AI-Powered</h3>\n      <p style=\"color:#666;margin:0;line-height:1.6;\">Generate entire apps with a single prompt.</p>\n    </div>\n    <div style=\"padding:28px;border-radius:12px;border:1px solid #f0f0f0;\">\n      <div style=\"font-size:32px;margin-bottom:12px;\">🔒</div>\n      <h3 style=\"margin:0 0 8px;font-size:18px;\">Secure by Default</h3>\n      <p style=\"color:#666;margin:0;line-height:1.6;\">Enterprise-grade security built in.</p>\n    </div>\n  </div>\n</section>`\n  });\n\n  console.log('[SaaS Landing Template] Blocks registered successfully');\n})();"
+    },
+
+    {
+      "id": "ecommerce-template",
+      "name": "E-Commerce Store",
+      "version": "1.0.0",
+      "author": "Nuvra Team",
+      "type": "template",
+      "description": "A full e-commerce store template with product listings, cart, checkout, and order management. Includes Products and Orders data collections.",
+      "longDescription": "A complete e-commerce solution with product catalog, shopping cart, checkout flow, and order management dashboard. Includes pre-built data schemas for Products, Orders, and Customers.",
+      "category": "Templates",
+      "tags": ["ecommerce", "shop", "store", "products"],
+      "badges": ["mobile-ready", "uses-ai"],
+      "screenshots": [],
+      "minNuvraVersion": "9.0.0",
+      "permissions": [
+        "project.pages.add",
+        "data.schema.write",
+        "editor.blocks.add",
+        "editor.styles.inject"
+      ],
+      "bundleUrl": "local:ecommerce-template",
+      "bundle": "// E-Commerce Template Extension\n'use strict';\n\n(async () => {\n  // Add products collection\n  await nuvra.data.addCollection({\n    name: 'products',\n    fields: [\n      { name: 'name',        type: 'text',    required: true },\n      { name: 'description', type: 'text',    required: false },\n      { name: 'price',       type: 'number',  required: true },\n      { name: 'image_url',   type: 'text',    required: false },\n      { name: 'stock',       type: 'number',  default: 0 },\n      { name: 'category',    type: 'text',    required: false },\n    ]\n  }).catch(() => {});\n\n  // Add orders collection\n  await nuvra.data.addCollection({\n    name: 'orders',\n    fields: [\n      { name: 'customer_email', type: 'text',   required: true },\n      { name: 'total',          type: 'number', required: true },\n      { name: 'status',         type: 'text',   default: 'pending' },\n      { name: 'items',          type: 'text',   required: false },\n    ]\n  }).catch(() => {});\n\n  // Add product card block\n  await nuvra.editor.addBlock({\n    id:       'product-card',\n    label:    'Product Card',\n    category: 'E-Commerce',\n    content:  `<div style=\"border:1px solid #f0f0f0;border-radius:12px;overflow:hidden;max-width:280px;\">\n  <div style=\"background:#f5f5f5;height:200px;display:flex;align-items:center;justify-content:center;font-size:48px;\">🛍️</div>\n  <div style=\"padding:16px;\">\n    <h3 style=\"margin:0 0 6px;font-size:16px;\">Product Name</h3>\n    <p style=\"color:#888;margin:0 0 12px;font-size:13px;\">Short description here</p>\n    <div style=\"display:flex;align-items:center;justify-content:space-between;\">\n      <span style=\"font-size:20px;font-weight:700;\">$29.99</span>\n      <button style=\"background:#7c6af7;color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;\">Add to Cart</button>\n    </div>\n  </div>\n</div>`\n  });\n\n  console.log('[E-Commerce Template] Initialized successfully');\n})();"
+    },
+
+    {
+      "id": "chart-blocks",
+      "name": "Chart & Data Blocks",
+      "version": "2.0.0",
+      "author": "Nuvra Team",
+      "type": "block",
+      "description": "Adds 8 chart and data visualisation blocks powered by Chart.js: bar, line, pie, doughnut, area, scatter, stat card, and data table.",
+      "longDescription": "A comprehensive set of chart blocks for building dashboards and data-rich applications. All charts are responsive and mobile-friendly. Uses Chart.js loaded from CDN.",
+      "category": "Blocks",
+      "tags": ["charts", "data", "dashboard", "analytics", "visualization"],
+      "badges": ["mobile-ready"],
+      "screenshots": [],
+      "minNuvraVersion": "9.0.0",
+      "permissions": [
+        "editor.blocks.add",
+        "editor.styles.inject",
+        "editor.canvas.inject"
+      ],
+      "bundleUrl": "local:chart-blocks",
+      "bundle": "// Chart & Data Blocks Extension\n'use strict';\n\n(async () => {\n  const chartScript = '<script src=\"https://cdn.jsdelivr.net/npm/chart.js\"><\\/script>';\n\n  const blocks = [\n    {\n      id: 'chart-bar',\n      label: 'Bar Chart',\n      category: 'Charts',\n      content: `<div style=\"padding:20px;background:#fff;border-radius:12px;border:1px solid #f0f0f0;\">\n  <h4 style=\"margin:0 0 16px;font-size:14px;color:#666;\">Monthly Revenue</h4>\n  <canvas id=\"barChart\" style=\"max-height:300px;\"></canvas>\n  <script>\n    (function(){\n      var ctx = document.getElementById('barChart');\n      if(!ctx||!window.Chart) return;\n      new Chart(ctx,{type:'bar',data:{labels:['Jan','Feb','Mar','Apr','May','Jun'],datasets:[{label:'Revenue',data:[12000,19000,15000,22000,18000,25000],backgroundColor:'rgba(124,106,247,0.8)',borderRadius:6}]},options:{responsive:true,plugins:{legend:{display:false}}}});\n    })();\n  <\\/script>\n</div>`\n    },\n    {\n      id: 'chart-line',\n      label: 'Line Chart',\n      category: 'Charts',\n      content: `<div style=\"padding:20px;background:#fff;border-radius:12px;border:1px solid #f0f0f0;\">\n  <h4 style=\"margin:0 0 16px;font-size:14px;color:#666;\">User Growth</h4>\n  <canvas id=\"lineChart\" style=\"max-height:300px;\"></canvas>\n  <script>\n    (function(){\n      var ctx = document.getElementById('lineChart');\n      if(!ctx||!window.Chart) return;\n      new Chart(ctx,{type:'line',data:{labels:['Jan','Feb','Mar','Apr','May','Jun'],datasets:[{label:'Users',data:[1200,1900,2400,3200,4100,5200],borderColor:'#7c6af7',backgroundColor:'rgba(124,106,247,0.1)',fill:true,tension:0.4}]},options:{responsive:true,plugins:{legend:{display:false}}}});\n    })();\n  <\\/script>\n</div>`\n    },\n    {\n      id: 'stat-card',\n      label: 'Stat Card',\n      category: 'Charts',\n      content: `<div style=\"padding:24px;background:#fff;border-radius:12px;border:1px solid #f0f0f0;text-align:center;\">\n  <p style=\"margin:0 0 8px;font-size:13px;color:#888;text-transform:uppercase;letter-spacing:0.05em;\">Total Revenue</p>\n  <p style=\"margin:0 0 8px;font-size:40px;font-weight:800;color:#1a1a2e;\">$48,291</p>\n  <p style=\"margin:0;font-size:13px;color:#22c55e;\">▲ 12.5% vs last month</p>\n</div>`\n    }\n  ];\n\n  for (const block of blocks) {\n    await nuvra.editor.addBlock(block);\n  }\n\n  console.log('[Chart Blocks] Registered', blocks.length, 'chart blocks');\n})();"
+    },
+
+    {
+      "id": "stripe-integration",
+      "name": "Stripe Payments",
+      "version": "1.1.0",
+      "author": "Nuvra Team",
+      "type": "integration",
+      "description": "Accept payments in your Nuvra apps with Stripe. Adds payment form blocks, checkout flow, and a Stripe webhook data schema.",
+      "longDescription": "Integrate Stripe payments into any Nuvra project. Includes a payment form block, Stripe.js injection, a payments data collection for tracking transactions, and a webhook schema for order fulfilment.",
+      "category": "Integrations",
+      "tags": ["stripe", "payments", "checkout", "ecommerce"],
+      "badges": ["mobile-ready"],
+      "screenshots": [],
+      "minNuvraVersion": "9.0.0",
+      "configSchema": [
+        { "key": "publishableKey", "label": "Stripe Publishable Key", "type": "text", "placeholder": "pk_live_..." },
+        { "key": "webhookEndpoint", "label": "Webhook Endpoint URL", "type": "text", "placeholder": "https://your-app.com/webhook" }
+      ],
+      "permissions": [
+        "editor.blocks.add",
+        "editor.canvas.inject",
+        "editor.styles.inject",
+        "data.schema.write",
+        "network.fetch"
+      ],
+      "bundleUrl": "local:stripe-integration",
+      "bundle": "// Stripe Integration Extension\n'use strict';\n\n(async () => {\n  // Add payments collection\n  await nuvra.data.addCollection({\n    name: 'payments',\n    fields: [\n      { name: 'stripe_payment_intent', type: 'text',    required: true },\n      { name: 'amount',                type: 'number',  required: true },\n      { name: 'currency',              type: 'text',    default: 'usd' },\n      { name: 'status',                type: 'text',    default: 'pending' },\n      { name: 'customer_email',        type: 'text',    required: false },\n      { name: 'created_at',            type: 'text',    required: false },\n    ]\n  }).catch(() => {});\n\n  // Add payment form block\n  await nuvra.editor.addBlock({\n    id:       'stripe-payment-form',\n    label:    'Stripe Payment Form',\n    category: 'Stripe',\n    content:  `<div style=\"max-width:480px;margin:auto;padding:32px;background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08);\">\n  <h3 style=\"margin:0 0 24px;font-size:20px;font-weight:700;\">Complete Payment</h3>\n  <div id=\"stripe-card-element\" style=\"padding:14px;border:1px solid #e5e5e5;border-radius:8px;margin-bottom:16px;\"><!-- Stripe Elements --></div>\n  <button id=\"stripe-pay-btn\" style=\"width:100%;background:#7c6af7;color:#fff;border:none;padding:14px;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;\">Pay Now</button>\n  <p id=\"stripe-error\" style=\"color:#ef4444;margin:8px 0 0;font-size:13px;\"></p>\n</div>`\n  });\n\n  console.log('[Stripe Integration] Initialized. Configure your publishable key in extension settings.');\n})();"
+    },
+
+    {
+      "id": "firebase-integration",
+      "name": "Firebase Integration",
+      "version": "1.0.0",
+      "author": "Nuvra Team",
+      "type": "integration",
+      "description": "Connect your Nuvra apps to Firebase Firestore for real-time data, Firebase Auth for user management, and Firebase Storage for file uploads.",
+      "longDescription": "A full Firebase integration for Nuvra. Provides real-time data binding blocks, Firebase Auth sign-in blocks, and file upload components. Requires a Firebase project.",
+      "category": "Integrations",
+      "tags": ["firebase", "realtime", "auth", "storage", "google"],
+      "badges": ["mobile-ready"],
+      "screenshots": [],
+      "minNuvraVersion": "9.0.0",
+      "configSchema": [
+        { "key": "apiKey",         "label": "Firebase API Key",       "type": "text" },
+        { "key": "projectId",      "label": "Firebase Project ID",    "type": "text" },
+        { "key": "storageBucket",  "label": "Firebase Storage Bucket","type": "text" }
+      ],
+      "permissions": [
+        "editor.blocks.add",
+        "editor.canvas.inject",
+        "data.schema.write",
+        "network.fetch"
+      ],
+      "bundleUrl": "local:firebase-integration",
+      "bundle": "// Firebase Integration Extension\n'use strict';\n\n(async () => {\n  await nuvra.editor.addBlock({\n    id:       'firebase-login',\n    label:    'Firebase Login',\n    category: 'Firebase',\n    content:  `<div style=\"max-width:400px;margin:auto;padding:32px;background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08);\">\n  <h3 style=\"margin:0 0 24px;text-align:center;\">Sign In</h3>\n  <input type=\"email\" placeholder=\"Email\" style=\"width:100%;padding:12px;border:1px solid #e5e5e5;border-radius:8px;margin-bottom:12px;box-sizing:border-box;\" />\n  <input type=\"password\" placeholder=\"Password\" style=\"width:100%;padding:12px;border:1px solid #e5e5e5;border-radius:8px;margin-bottom:16px;box-sizing:border-box;\" />\n  <button style=\"width:100%;background:#f59e0b;color:#fff;border:none;padding:14px;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;\">Sign In with Firebase</button>\n</div>`\n  });\n\n  console.log('[Firebase Integration] Initialized.');\n})();"
+    },
+
+    {
+      "id": "saas-ai-pack",
+      "name": "SaaS AI Pack",
+      "version": "1.3.0",
+      "author": "Nuvra Team",
+      "type": "ai-pack",
+      "description": "Extends Nuvra AI with deep SaaS domain knowledge. Generates subscription flows, pricing pages, onboarding sequences, and admin dashboards with expert-level accuracy.",
+      "longDescription": "The SaaS AI Pack teaches Nuvra's AI engine to understand SaaS-specific patterns: MRR/ARR dashboards, subscription tiers, trial flows, churn analysis, and B2B onboarding. When installed, AI generation automatically uses SaaS best practices without any extra prompting.",
+      "category": "AI Packs",
+      "tags": ["saas", "subscription", "b2b", "dashboard", "ai"],
+      "badges": ["uses-ai"],
+      "screenshots": [],
+      "minNuvraVersion": "9.0.0",
+      "permissions": [
+        "ai.planner.register",
+        "ai.prompt.extend",
+        "ai.hooks.before",
+        "ai.hooks.after"
+      ],
+      "bundleUrl": "local:saas-ai-pack",
+      "bundle": "// SaaS AI Pack\n'use strict';\n\n(async () => {\n  // Register the SaaS planner\n  await nuvra.ai.registerPlanner({\n    name:        'SaaS Planner',\n    description: 'Expert SaaS application generator with subscription, dashboard, and onboarding patterns',\n    mode:        'app',\n    keywords:    ['saas', 'subscription', 'dashboard', 'admin', 'analytics', 'mrr', 'arr', 'churn', 'onboarding', 'b2b'],\n    systemPrompt: `You are an expert SaaS application architect. When generating SaaS applications:\n- Always include a subscription management page with tier comparison\n- Include an analytics dashboard with MRR, ARR, churn rate, and active users metrics\n- Add an onboarding flow with progress steps\n- Include a settings page with billing, profile, and team management\n- Use a professional dark sidebar navigation pattern\n- Ensure all data collections include created_at and updated_at timestamps\n- Add role-based access patterns (admin, member, viewer)\n- Include empty states for all data tables\n- Add loading skeletons for async content`\n  });\n\n  // Extend prompts with SaaS context\n  nuvra.ai.extendPrompt(function(prompt, context) {\n    const saasKeywords = ['saas', 'subscription', 'dashboard', 'admin', 'analytics'];\n    const isSaas = saasKeywords.some(kw => prompt.toLowerCase().includes(kw));\n    if (!isSaas) return prompt;\n    return prompt + '\\n\\n[SaaS AI Pack active: Apply SaaS best practices including subscription management, analytics dashboards, and professional B2B UI patterns.]';\n  });\n\n  console.log('[SaaS AI Pack] Registered. AI will now use SaaS-optimised generation strategies.');\n})();"
+    },
+
+    {
+      "id": "ecommerce-ai-pack",
+      "name": "E-Commerce AI Pack",
+      "version": "1.1.0",
+      "author": "Nuvra Team",
+      "type": "ai-pack",
+      "description": "Extends Nuvra AI with e-commerce expertise. Generates product catalogs, shopping carts, checkout flows, inventory management, and order tracking with conversion-optimised patterns.",
+      "longDescription": "The E-Commerce AI Pack gives Nuvra's AI deep knowledge of online retail patterns: product listings, cart management, checkout optimisation, inventory tracking, and customer management. Generates conversion-optimised layouts based on e-commerce best practices.",
+      "category": "AI Packs",
+      "tags": ["ecommerce", "shop", "products", "checkout", "ai"],
+      "badges": ["uses-ai", "mobile-ready"],
+      "screenshots": [],
+      "minNuvraVersion": "9.0.0",
+      "permissions": [
+        "ai.planner.register",
+        "ai.prompt.extend"
+      ],
+      "bundleUrl": "local:ecommerce-ai-pack",
+      "bundle": "// E-Commerce AI Pack\n'use strict';\n\n(async () => {\n  await nuvra.ai.registerPlanner({\n    name:        'E-Commerce Planner',\n    description: 'Expert e-commerce generator with product catalog, cart, and checkout patterns',\n    mode:        'app',\n    keywords:    ['shop', 'store', 'ecommerce', 'product', 'cart', 'checkout', 'order', 'inventory', 'catalogue'],\n    systemPrompt: `You are an expert e-commerce application architect. When generating e-commerce applications:\n- Include a product catalog with filtering, sorting, and search\n- Add a shopping cart with quantity management and price calculation\n- Include a multi-step checkout flow (cart → shipping → payment → confirmation)\n- Add an order management dashboard with status tracking\n- Include product detail pages with image gallery, reviews, and related products\n- Use a clean, conversion-optimised layout with clear CTAs\n- Add inventory management with low-stock alerts\n- Include customer management with order history\n- Ensure mobile-first responsive design for all pages`\n  });\n\n  nuvra.ai.extendPrompt(function(prompt, context) {\n    const ecomKeywords = ['shop', 'store', 'ecommerce', 'product', 'cart', 'checkout'];\n    const isEcom = ecomKeywords.some(kw => prompt.toLowerCase().includes(kw));\n    if (!isEcom) return prompt;\n    return prompt + '\\n\\n[E-Commerce AI Pack active: Apply e-commerce best practices with conversion-optimised layouts and complete purchase flows.]';\n  });\n\n  console.log('[E-Commerce AI Pack] Registered.');\n})();"
+    },
+
+    {
+      "id": "internal-tools-ai-pack",
+      "name": "Internal Tools AI Pack",
+      "version": "1.0.0",
+      "author": "Nuvra Team",
+      "type": "ai-pack",
+      "description": "Extends Nuvra AI with internal tooling expertise. Generates CRUD admin panels, data tables, approval workflows, and reporting dashboards optimised for internal business use.",
+      "longDescription": "The Internal Tools AI Pack specialises in generating business-internal applications: admin panels, data management tools, approval workflows, reporting dashboards, and employee portals. Optimised for productivity over aesthetics.",
+      "category": "AI Packs",
+      "tags": ["internal", "admin", "crud", "workflow", "reporting", "ai"],
+      "badges": ["uses-ai"],
+      "screenshots": [],
+      "minNuvraVersion": "9.0.0",
+      "permissions": [
+        "ai.planner.register",
+        "ai.prompt.extend"
+      ],
+      "bundleUrl": "local:internal-tools-ai-pack",
+      "bundle": "// Internal Tools AI Pack\n'use strict';\n\n(async () => {\n  await nuvra.ai.registerPlanner({\n    name:        'Internal Tools Planner',\n    description: 'Expert internal tooling generator with CRUD, workflows, and reporting patterns',\n    mode:        'app',\n    keywords:    ['internal', 'admin', 'crud', 'workflow', 'approval', 'report', 'employee', 'hr', 'crm', 'erp', 'tool'],\n    systemPrompt: `You are an expert internal tools developer. When generating internal applications:\n- Use a dense, information-rich layout optimised for power users\n- Include full CRUD operations with inline editing where appropriate\n- Add bulk actions for data tables (select all, export, delete)\n- Include approval workflows with status tracking and comment threads\n- Add role-based permissions UI (what each role can see/do)\n- Include audit logs for all data changes\n- Add CSV/Excel export for all data tables\n- Use a sidebar navigation with nested sections\n- Include search and advanced filtering on all data views\n- Add keyboard shortcuts for common actions`\n  });\n\n  nuvra.ai.extendPrompt(function(prompt, context) {\n    const internalKeywords = ['internal', 'admin', 'crud', 'workflow', 'employee', 'hr', 'crm'];\n    const isInternal = internalKeywords.some(kw => prompt.toLowerCase().includes(kw));\n    if (!isInternal) return prompt;\n    return prompt + '\\n\\n[Internal Tools AI Pack active: Apply internal tooling best practices with dense layouts, CRUD operations, and workflow management.]';\n  });\n\n  console.log('[Internal Tools AI Pack] Registered.');\n})();"
+    }
+
+  ]
+}

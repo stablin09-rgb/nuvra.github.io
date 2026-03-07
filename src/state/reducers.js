@@ -1,14 +1,4 @@
-/**
- * reducers.js — Nuvra Foundation (Phase 0–1)
- *
- * Pure reducer functions. Each reducer handles a slice of state.
- * Reducers MUST be pure: (state, action) => newState.
- * They MUST NOT mutate state, call APIs, or have side effects.
- *
- * Action shape: { type: string, payload: * }
- *
- * @module state/reducers
- */
+
 'use strict';
 
 import { generateId } from '../runtime/utils.js';
@@ -318,186 +308,148 @@ export function runtimeErrorsReducer(state = RUNTIME_ERRORS_INITIAL, action) {
   }
 }
 
-// ─── AI Generation Reducer (Phase 5) ────────────────────────────────────────
-// Tracks the full Phase 5 AI generation pipeline state.
-const AI_GEN_INITIAL = {
-  generationStage:  'idle',    // GenerationStage
-  generationRunId:  null,      // Current run ID
-  generationError:  null,      // Last error message
-  intent:           null,      // IntentSchema from Step 1
-  plan:             null,      // SystemPlan from Step 2
-  generatedSchema:  null,      // Assembled AppSchema from Step 3
-  activeProviderId: 'openai',  // Currently active provider
-  budgetSummary:    null,      // BudgetEngine session summary
-  securityThreats:  [],        // Recent security scan threats
+// ─── AI Generation Reducer ────────────────────────────────────────────────────
+const AI_GENERATION_INITIAL = {
+  activeGenerations: {},
+  history: [],
+  lastError: null,
 };
 
-export function aiGenerationReducer(state = AI_GEN_INITIAL, action) {
+export function aiGenerationReducer(state = AI_GENERATION_INITIAL, action) {
   switch (action.type) {
-    case 'AI/SET_GENERATION_STAGE':
-      return { ...state, generationStage: action.payload, generationError: null };
-    case 'AI/SET_GENERATION_RUN_ID':
-      return { ...state, generationRunId: action.payload };
-    case 'AI/SET_GENERATION_ERROR':
-      return { ...state, generationStage: 'failed', generationError: action.payload };
-    case 'AI/SET_INTENT':
-      return { ...state, intent: action.payload };
-    case 'AI/SET_PLAN':
-      return { ...state, plan: action.payload };
-    case 'AI/SET_SCHEMA':
-      return { ...state, generatedSchema: action.payload };
-    case 'AI/SET_ACTIVE_PROVIDER':
-      return { ...state, activeProviderId: action.payload };
-    case 'AI/SET_BUDGET_SUMMARY':
-      return { ...state, budgetSummary: action.payload };
-    case 'AI/ADD_SECURITY_THREAT':
-      return { ...state, securityThreats: [...state.securityThreats.slice(-19), action.payload] };
-    case 'AI/CLEAR_GENERATION':
-      return { ...AI_GEN_INITIAL, activeProviderId: state.activeProviderId, budgetSummary: state.budgetSummary };
+    case 'AI_GENERATION/START':
+      return {
+        ...state,
+        activeGenerations: { ...state.activeGenerations, [action.payload.id]: action.payload },
+      };
+    case 'AI_GENERATION/UPDATE_STAGE': {
+      const { id, stage, message } = action.payload;
+      if (!state.activeGenerations[id]) return state;
+      return {
+        ...state,
+        activeGenerations: {
+          ...state.activeGenerations,
+          [id]: { ...state.activeGenerations[id], stage, message },
+        },
+      };
+    }
+    case 'AI_GENERATION/COMPLETE': {
+      const { [action.payload.id]: completed, ...rest } = state.activeGenerations;
+      if (!completed) return state;
+      return {
+        ...state,
+        activeGenerations: rest,
+        history: [completed, ...state.history.slice(0, 49)],
+      };
+    }
+    case 'AI_GENERATION/FAIL': {
+      const { [action.payload.id]: failed, ...rest } = state.activeGenerations;
+      if (!failed) return state;
+      return {
+        ...state,
+        activeGenerations: rest,
+        lastError: action.payload.error,
+        history: [failed, ...state.history.slice(0, 49)],
+      };
+    }
     default:
       return state;
   }
 }
 
-// ─── Auth Reducer (Phase 6) ──────────────────────────────────────────────────
+// ─── Phase 6: Auth, Cloud, Governance ─────────────────────────────────────────
+
 const AUTH_INITIAL = {
-  userId:          null,
-  email:           null,
-  displayName:     null,
-  avatarUrl:       null,
-  isAuthenticated: false,
-  isLoading:       false,
-  error:           null,
-  provider:        null,
+  session: null,
+  user: null,
+  provider: null,
+  status: 'idle',
+  error: null,
 };
 
 export function authReducer(state = AUTH_INITIAL, action) {
   switch (action.type) {
-    case 'AUTH/SET_USER':
-      return { ...state, ...action.payload, isAuthenticated: true, isLoading: false, error: null };
-    case 'AUTH/CLEAR_USER':
-      return { ...AUTH_INITIAL };
-    case 'AUTH/SET_LOADING':
-      return { ...state, isLoading: action.payload };
+    case 'AUTH/SET_STATUS':
+      return { ...state, status: action.payload, error: null };
+    case 'AUTH/SET_SESSION':
+      return { ...state, session: action.payload, user: action.payload?.user || null, status: 'authenticated' };
+    case 'AUTH/SIGN_OUT':
+      return { ...AUTH_INITIAL, provider: state.provider };
     case 'AUTH/SET_ERROR':
-      return { ...state, error: action.payload, isLoading: false };
+      return { ...state, error: action.payload, status: 'error' };
     default:
       return state;
   }
 }
 
-// ─── Cloud Reducer (Phase 6) ──────────────────────────────────────────────────
 const CLOUD_INITIAL = {
-  isOnline:         true,
-  isSyncing:        false,
-  lastSyncedAt:     null,
-  syncError:        null,
-  conflicts:        [],
-  offlineQueueSize: 0,
-  projects:         [],
-  activeProjectId:  null,
+  projects: [],
+  activeProject: null,
+  status: 'idle',
+  lastSynced: null,
+  error: null,
 };
 
 export function cloudReducer(state = CLOUD_INITIAL, action) {
   switch (action.type) {
-    case 'CLOUD/SET_SYNCING':
-      return { ...state, isSyncing: action.payload };
-    case 'CLOUD/SET_LAST_SYNCED':
-      return { ...state, lastSyncedAt: action.payload, isSyncing: false, syncError: null };
-    case 'CLOUD/SET_SYNC_ERROR':
-      return { ...state, syncError: action.payload, isSyncing: false };
-    case 'CLOUD/SET_CONFLICTS':
-      return { ...state, conflicts: action.payload };
-    case 'CLOUD/RESOLVE_CONFLICT':
-      return { ...state, conflicts: state.conflicts.filter(c => c.id !== action.payload) };
-    case 'CLOUD/SET_OFFLINE_QUEUE_SIZE':
-      return { ...state, offlineQueueSize: action.payload };
+    case 'CLOUD/SET_STATUS':
+      return { ...state, status: action.payload };
     case 'CLOUD/SET_PROJECTS':
       return { ...state, projects: action.payload };
     case 'CLOUD/SET_ACTIVE_PROJECT':
-      return { ...state, activeProjectId: action.payload };
-    case 'PROJECTS/CLEAR':
-      return { ...state, projects: [], activeProjectId: null };
+      return { ...state, activeProject: action.payload };
+    case 'CLOUD/SET_LAST_SYNCED':
+      return { ...state, lastSynced: action.payload };
+    case 'CLOUD/SET_ERROR':
+      return { ...state, error: action.payload };
     default:
       return state;
   }
 }
 
-// ─── Governance Reducer (Phase 6) ─────────────────────────────────────────────
 const GOVERNANCE_INITIAL = {
-  pendingApprovals:  [],
-  pendingApprovalId: null,
-  auditLogCount:     0,
-  lastAuditEvent:    null,
+  secrets: {},
+  ownership: {},
+  logs: [],
 };
 
 export function governanceReducer(state = GOVERNANCE_INITIAL, action) {
   switch (action.type) {
-    case 'AI_APPROVAL_REQUIRED':
-      return {
-        ...state,
-        pendingApprovals:  [...state.pendingApprovals, action.payload.approvalId],
-        pendingApprovalId: action.payload.approvalId,
-      };
-    case 'AI_APPROVED':
-    case 'AI_REJECTED':
-      return {
-        ...state,
-        pendingApprovals:  state.pendingApprovals.filter(id => id !== action.payload.approvalId),
-        pendingApprovalId: null,
-      };
-    case 'AI/SET_PENDING_APPROVAL':
-      return { ...state, pendingApprovalId: action.payload.approvalId };
-    case 'AI/CLEAR_PENDING_APPROVAL':
-      return { ...state, pendingApprovalId: null };
-    case 'GOVERNANCE/INCREMENT_AUDIT_COUNT':
-      return { ...state, auditLogCount: state.auditLogCount + 1, lastAuditEvent: action.payload };
+    case 'GOVERNANCE/SET_SECRETS':
+      return { ...state, secrets: action.payload };
+    case 'GOVERNANCE/SET_OWNERSHIP':
+      return { ...state, ownership: action.payload };
+    case 'GOVERNANCE/ADD_LOG':
+      return { ...state, logs: [...state.logs, action.payload] };
     default:
       return state;
   }
 }
 
-// ─── Billing Reducer (Phase 7) ───────────────────────────────────────────────
+// ─── Phase 7: Billing & Usage ─────────────────────────────────────────────────
+
 const BILLING_INITIAL = {
-  planId:            'free',
-  customerId:        null,
-  subscriptionId:    null,
-  sessionCostUSD:    0,
-  dashboard:         null,
-  transitionPreview: null,
-  pendingDowngrade:  null,
-  limitWarnings:     {},   // dimension → { pct }
-  limitBlocked:      {},   // dimension → true
-  aiCostBlocked:     null, // { scope, reason } | null
-  abuseFlag:         null, // { userId, code, reason } | null
+  plan: 'free',
+  usage: {},
+  limits: {},
+  history: [],
+  status: 'active',
+  aiCostBlocked: null,
+  abuseFlag: null,
 };
 
 export function billingReducer(state = BILLING_INITIAL, action) {
   switch (action.type) {
     case 'BILLING/SET_PLAN':
-      return { ...state, planId: action.payload };
-    case 'BILLING/SET_CUSTOMER_ID':
-      return { ...state, customerId: action.payload };
-    case 'BILLING/SET_SUBSCRIPTION_ID':
-      return { ...state, subscriptionId: action.payload };
-    case 'BILLING/SET_SESSION_COST':
-      return { ...state, sessionCostUSD: action.payload };
-    case 'BILLING/SET_DASHBOARD':
-      return { ...state, dashboard: action.payload };
-    case 'BILLING/SET_TRANSITION_PREVIEW':
-      return { ...state, transitionPreview: action.payload };
-    case 'BILLING/SET_PENDING_DOWNGRADE':
-      return { ...state, pendingDowngrade: action.payload };
-    case 'BILLING/CLEAR_PENDING_DOWNGRADE':
-      return { ...state, pendingDowngrade: null };
-    case 'BILLING/SET_LIMIT_WARNING': {
-      const { dimension, pct } = action.payload;
-      return { ...state, limitWarnings: { ...state.limitWarnings, [dimension]: { pct } } };
-    }
-    case 'BILLING/SET_LIMIT_BLOCKED': {
-      const { dimension } = action.payload;
-      return { ...state, limitBlocked: { ...state.limitBlocked, [dimension]: true } };
-    }
+      return { ...state, plan: action.payload };
+    case 'BILLING/SET_USAGE':
+      return { ...state, usage: { ...state.usage, ...action.payload } };
+    case 'BILLING/SET_LIMITS':
+      return { ...state, limits: action.payload };
+    case 'BILLING/SET_HISTORY':
+      return { ...state, history: action.payload };
+    case 'BILLING/SET_STATUS':
+      return { ...state, status: action.payload };
     case 'BILLING/SET_AI_COST_BLOCKED':
       return { ...state, aiCostBlocked: action.payload };
     case 'BILLING/CLEAR_AI_COST_BLOCKED':
@@ -538,7 +490,6 @@ export function extensionsReducer(state = EXTENSIONS_INITIAL, action) {
   }
 }
 
-// ─── Marketplace Reducer ─────────────────────────────────────────────────────
 const MARKETPLACE_INITIAL = {
   catalog:   [], // Array of MarketplaceExtensionManifests
   filters:   {}, // Active filters for the catalog
@@ -564,59 +515,6 @@ export function marketplaceReducer(state = MARKETPLACE_INITIAL, action) {
   }
 }
 
-// ─── Marketplace Reducer ─────────────────────────────────────────────────────
-const MARKETPLACE_INITIAL = {
-  catalog:   [], // Array of MarketplaceExtensionManifests
-  filters:   {}, // Active filters for the catalog
-  query:     '', // Search query
-  featured:  [], // Featured extensions
-  promotions: [], // Active promotions
-};
-
-export function marketplaceReducer(state = MARKETPLACE_INITIAL, action) {
-  switch (action.type) {
-    case 'MARKETPLACE/SET_CATALOG':
-      return { ...state, catalog: action.payload };
-    case 'MARKETPLACE/SET_FILTERS':
-      return { ...state, filters: { ...state.filters, ...action.payload } };
-    case 'MARKETPLACE/SET_QUERY':
-      return { ...state, query: action.payload };
-    case 'MARKETPLACE/SET_FEATURED':
-      return { ...state, featured: action.payload };
-    case 'MARKETPLACE/SET_PROMOTIONS':
-      return { ...state, promotions: action.payload };
-    default:
-      return state;
-  }
-}
-
-// ─── Marketplace Reducer ─────────────────────────────────────────────────────
-const MARKETPLACE_INITIAL = {
-  catalog:   [], // Array of MarketplaceExtensionManifests
-  filters:   {}, // Active filters for the catalog
-  query:     '', // Search query
-  featured:  [], // Featured extensions
-  promotions: [], // Active promotions
-};
-
-export function marketplaceReducer(state = MARKETPLACE_INITIAL, action) {
-  switch (action.type) {
-    case 'MARKETPLACE/SET_CATALOG':
-      return { ...state, catalog: action.payload };
-    case 'MARKETPLACE/SET_FILTERS':
-      return { ...state, filters: { ...state.filters, ...action.payload } };
-    case 'MARKETPLACE/SET_QUERY':
-      return { ...state, query: action.payload };
-    case 'MARKETPLACE/SET_FEATURED':
-      return { ...state, featured: action.payload };
-    case 'MARKETPLACE/SET_PROMOTIONS':
-      return { ...state, promotions: action.payload };
-    default:
-      return state;
-  }
-}
-
-// ─── Revenue Reducer ─────────────────────────────────────────────────────────
 const REVENUE_INITIAL = {
   transactions: [], // Array of TransactionRecords
   earnings:     {}, // { [extensionId]: amount }
@@ -636,7 +534,6 @@ export function revenueReducer(state = REVENUE_INITIAL, action) {
   }
 }
 
-// ─── Extension Governance Reducer ────────────────────────────────────────────
 const EXTENSION_GOVERNANCE_INITIAL = {
   securityViolations: [], // Array of SecurityViolationRecords
   auditLogs:          [], // Array of AuditLogRecords
@@ -656,7 +553,6 @@ export function extensionGovernanceReducer(state = EXTENSION_GOVERNANCE_INITIAL,
   }
 }
 
-// ─── AI Extensions Reducer ───────────────────────────────────────────────────
 const AI_EXTENSIONS_INITIAL = {
   availableModels:    [], // Array of AIModelRecords
   activeIntegrations: [], // Array of active AI extension IDs
@@ -678,7 +574,6 @@ export function aiExtensionsReducer(state = AI_EXTENSIONS_INITIAL, action) {
   }
 }
 
-// ─── Extension Dev Tools Reducer ─────────────────────────────────────────────
 const EXTENSION_DEV_TOOLS_INITIAL = {
   isDevMode:       false,
   selectedExtension: null, // ID of extension being developed
@@ -701,7 +596,6 @@ export function extensionDevToolsReducer(state = EXTENSION_DEV_TOOLS_INITIAL, ac
   }
 }
 
-// ─── Compatibility Matrix Reducer ────────────────────────────────────────────
 const COMPATIBILITY_MATRIX_INITIAL = {
   nuvraCoreVersion: '0.0.0', // Current Nuvra core version
   extensionVersions: {},    // { [extensionId]: { min: 'x.y.z', max: 'a.b.c' } }
@@ -723,271 +617,6 @@ export function compatibilityMatrixReducer(state = COMPATIBILITY_MATRIX_INITIAL,
   }
 }
 
-// ─── Marketplace Reducer ─────────────────────────────────────────────────────
-const MARKETPLACE_INITIAL = {
-  catalog:   [], // Array of MarketplaceExtensionManifests
-  filters:   {}, // Active filters for the catalog
-  query:     '', // Search query
-  featured:  [], // Featured extensions
-  promotions: [], // Active promotions
-};
-
-export function marketplaceReducer(state = MARKETPLACE_INITIAL, action) {
-  switch (action.type) {
-    case 'MARKETPLACE/SET_CATALOG':
-      return { ...state, catalog: action.payload };
-    case 'MARKETPLACE/SET_FILTERS':
-      return { ...state, filters: { ...state.filters, ...action.payload } };
-    case 'MARKETPLACE/SET_QUERY':
-      return { ...state, query: action.payload };
-    case 'MARKETPLACE/SET_FEATURED':
-      return { ...state, featured: action.payload };
-    case 'MARKETPLACE/SET_PROMOTIONS':
-      return { ...state, promotions: action.payload };
-    default:
-      return state;
-  }
-}
-
-// ─── Revenue Reducer ─────────────────────────────────────────────────────────
-const REVENUE_INITIAL = {
-  transactions: [], // Array of TransactionRecords
-  earnings:     {}, // { [extensionId]: amount }
-  payouts:      [], // Array of PayoutRecords
-};
-
-export function revenueReducer(state = REVENUE_INITIAL, action) {
-  switch (action.type) {
-    case 'REVENUE/ADD_TRANSACTION':
-      return { ...state, transactions: [...state.transactions, action.payload] };
-    case 'REVENUE/UPDATE_EARNINGS':
-      return { ...state, earnings: { ...state.earnings, ...action.payload } };
-    case 'REVENUE/ADD_PAYOUT':
-      return { ...state, payouts: [...state.payouts, action.payload] };
-    default:
-      return state;
-  }
-}
-
-// ─── Extension Governance Reducer ────────────────────────────────────────────
-const EXTENSION_GOVERNANCE_INITIAL = {
-  securityViolations: [], // Array of SecurityViolationRecords
-  auditLogs:          [], // Array of AuditLogRecords
-  policies:           {}, // Active policies
-};
-
-export function extensionGovernanceReducer(state = EXTENSION_GOVERNANCE_INITIAL, action) {
-  switch (action.type) {
-    case 'EXTENSION_GOVERNANCE/ADD_VIOLATION':
-      return { ...state, securityViolations: [...state.securityViolations, action.payload] };
-    case 'EXTENSION_GOVERNANCE/ADD_AUDIT_LOG':
-      return { ...state, auditLogs: [...state.auditLogs, action.payload] };
-    case 'EXTENSION_GOVERNANCE/SET_POLICY':
-      return { ...state, policies: { ...state.policies, ...action.payload } };
-    default:
-      return state;
-  }
-}
-
-// ─── AI Extensions Reducer ───────────────────────────────────────────────────
-const AI_EXTENSIONS_INITIAL = {
-  availableModels:    [], // Array of AIModelRecords
-  activeIntegrations: [], // Array of active AI extension IDs
-  usageStats:         {}, // { [extensionId]: UsageStats }
-};
-
-export function aiExtensionsReducer(state = AI_EXTENSIONS_INITIAL, action) {
-  switch (action.type) {
-    case 'AI_EXTENSIONS/SET_AVAILABLE_MODELS':
-      return { ...state, availableModels: action.payload };
-    case 'AI_EXTENSIONS/ACTIVATE_INTEGRATION':
-      return { ...state, activeIntegrations: [...state.activeIntegrations, action.payload] };
-    case 'AI_EXTENSIONS/DEACTIVATE_INTEGRATION':
-      return { ...state, activeIntegrations: state.activeIntegrations.filter(id => id !== action.payload) };
-    case 'AI_EXTENSIONS/UPDATE_USAGE_STATS':
-      return { ...state, usageStats: { ...state.usageStats, ...action.payload } };
-    default:
-      return state;
-  }
-}
-
-// ─── Extension Dev Tools Reducer ─────────────────────────────────────────────
-const EXTENSION_DEV_TOOLS_INITIAL = {
-  isDevMode:       false,
-  selectedExtension: null, // ID of extension being developed
-  buildLogs:       [],   // Array of BuildLogRecords
-  testResults:     {},   // { [testId]: TestResult }
-};
-
-export function extensionDevToolsReducer(state = EXTENSION_DEV_TOOLS_INITIAL, action) {
-  switch (action.type) {
-    case 'EXTENSION_DEV_TOOLS/SET_DEV_MODE':
-      return { ...state, isDevMode: action.payload };
-    case 'EXTENSION_DEV_TOOLS/SET_SELECTED_EXTENSION':
-      return { ...state, selectedExtension: action.payload };
-    case 'EXTENSION_DEV_TOOLS/ADD_BUILD_LOG':
-      return { ...state, buildLogs: [...state.buildLogs, action.payload] };
-    case 'EXTENSION_DEV_TOOLS/SET_TEST_RESULT':
-      return { ...state, testResults: { ...state.testResults, [action.payload.id]: action.payload.result } };
-    default:
-      return state;
-  }
-}
-
-// ─── Compatibility Matrix Reducer ────────────────────────────────────────────
-const COMPATIBILITY_MATRIX_INITIAL = {
-  nuvraCoreVersion: '0.0.0', // Current Nuvra core version
-  extensionVersions: {},    // { [extensionId]: { min: 'x.y.z', max: 'a.b.c' } }
-  compatibilityIssues: [],  // Array of CompatibilityIssueRecords
-};
-
-export function compatibilityMatrixReducer(state = COMPATIBILITY_MATRIX_INITIAL, action) {
-  switch (action.type) {
-    case 'COMPATIBILITY_MATRIX/SET_CORE_VERSION':
-      return { ...state, nuvraCoreVersion: action.payload };
-    case 'COMPATIBILITY_MATRIX/SET_EXTENSION_VERSIONS':
-      return { ...state, extensionVersions: { ...state.extensionVersions, ...action.payload } };
-    case 'COMPATIBILITY_MATRIX/ADD_ISSUE':
-      return { ...state, compatibilityIssues: [...state.compatibilityIssues, action.payload] };
-    case 'COMPATIBILITY_MATRIX/RESOLVE_ISSUE':
-      return { ...state, compatibilityIssues: state.compatibilityIssues.filter(issue => issue.id !== action.payload) };
-    default:
-      return state;
-  }
-}
-
-// ─── Marketplace Reducer ─────────────────────────────────────────────────────
-const MARKETPLACE_INITIAL = {
-  catalog:   [], // Array of MarketplaceExtensionManifests
-  filters:   {}, // Active filters for the catalog
-  query:     '', // Search query
-  featured:  [], // Featured extensions
-  promotions: [], // Active promotions
-};
-
-export function marketplaceReducer(state = MARKETPLACE_INITIAL, action) {
-  switch (action.type) {
-    case 'MARKETPLACE/SET_CATALOG':
-      return { ...state, catalog: action.payload };
-    case 'MARKETPLACE/SET_FILTERS':
-      return { ...state, filters: { ...state.filters, ...action.payload } };
-    case 'MARKETPLACE/SET_QUERY':
-      return { ...state, query: action.payload };
-    case 'MARKETPLACE/SET_FEATURED':
-      return { ...state, featured: action.payload };
-    case 'MARKETPLACE/SET_PROMOTIONS':
-      return { ...state, promotions: action.payload };
-    default:
-      return state;
-  }
-}
-
-// ─── Revenue Reducer ─────────────────────────────────────────────────────────
-const REVENUE_INITIAL = {
-  transactions: [], // Array of TransactionRecords
-  earnings:     {}, // { [extensionId]: amount }
-  payouts:      [], // Array of PayoutRecords
-};
-
-export function revenueReducer(state = REVENUE_INITIAL, action) {
-  switch (action.type) {
-    case 'REVENUE/ADD_TRANSACTION':
-      return { ...state, transactions: [...state.transactions, action.payload] };
-    case 'REVENUE/UPDATE_EARNINGS':
-      return { ...state, earnings: { ...state.earnings, ...action.payload } };
-    case 'REVENUE/ADD_PAYOUT':
-      return { ...state, payouts: [...state.payouts, action.payload] };
-    default:
-      return state;
-  }
-}
-
-// ─── Extension Governance Reducer ────────────────────────────────────────────
-const EXTENSION_GOVERNANCE_INITIAL = {
-  securityViolations: [], // Array of SecurityViolationRecords
-  auditLogs:          [], // Array of AuditLogRecords
-  policies:           {}, // Active policies
-};
-
-export function extensionGovernanceReducer(state = EXTENSION_GOVERNANCE_INITIAL, action) {
-  switch (action.type) {
-    case 'EXTENSION_GOVERNANCE/ADD_VIOLATION':
-      return { ...state, securityViolations: [...state.securityViolations, action.payload] };
-    case 'EXTENSION_GOVERNANCE/ADD_AUDIT_LOG':
-      return { ...state, auditLogs: [...state.auditLogs, action.payload] };
-    case 'EXTENSION_GOVERNANCE/SET_POLICY':
-      return { ...state, policies: { ...state.policies, ...action.payload } };
-    default:
-      return state;
-  }
-}
-
-// ─── AI Extensions Reducer ───────────────────────────────────────────────────
-const AI_EXTENSIONS_INITIAL = {
-  availableModels:    [], // Array of AIModelRecords
-  activeIntegrations: [], // Array of active AI extension IDs
-  usageStats:         {}, // { [extensionId]: UsageStats }
-};
-
-export function aiExtensionsReducer(state = AI_EXTENSIONS_INITIAL, action) {
-  switch (action.type) {
-    case 'AI_EXTENSIONS/SET_AVAILABLE_MODELS':
-      return { ...state, availableModels: action.payload };
-    case 'AI_EXTENSIONS/ACTIVATE_INTEGRATION':
-      return { ...state, activeIntegrations: [...state.activeIntegrations, action.payload] };
-    case 'AI_EXTENSIONS/DEACTIVATE_INTEGRATION':
-      return { ...state, activeIntegrations: state.activeIntegrations.filter(id => id !== action.payload) };
-    case 'AI_EXTENSIONS/UPDATE_USAGE_STATS':
-      return { ...state, usageStats: { ...state.usageStats, ...action.payload } };
-    default:
-      return state;
-  }
-}
-
-// ─── Extension Dev Tools Reducer ─────────────────────────────────────────────
-const EXTENSION_DEV_TOOLS_INITIAL = {
-  isDevMode:       false,
-  selectedExtension: null, // ID of extension being developed
-  buildLogs:       [],   // Array of BuildLogRecords
-  testResults:     {},   // { [testId]: TestResult }
-};
-
-export function extensionDevToolsReducer(state = EXTENSION_DEV_TOOLS_INITIAL, action) {
-  switch (action.type) {
-    case 'EXTENSION_DEV_TOOLS/SET_DEV_MODE':
-      return { ...state, isDevMode: action.payload };
-    case 'EXTENSION_DEV_TOOLS/SET_SELECTED_EXTENSION':
-      return { ...state, selectedExtension: action.payload };
-    case 'EXTENSION_DEV_TOOLS/ADD_BUILD_LOG':
-      return { ...state, buildLogs: [...state.buildLogs, action.payload] };
-    case 'EXTENSION_DEV_TOOLS/SET_TEST_RESULT':
-      return { ...state, testResults: { ...state.testResults, [action.payload.id]: action.payload.result } };
-    default:
-      return state;
-  }
-}
-
-// ─── Compatibility Matrix Reducer ────────────────────────────────────────────
-const COMPATIBILITY_MATRIX_INITIAL = {
-  nuvraCoreVersion: '0.0.0', // Current Nuvra core version
-  extensionVersions: {},    // { [extensionId]: { min: 'x.y.z', max: 'a.b.c' } }
-  compatibilityIssues: [],  // Array of CompatibilityIssueRecords
-};
-
-export function compatibilityMatrixReducer(state = COMPATIBILITY_MATRIX_INITIAL, action) {
-  switch (action.type) {
-    case 'COMPATIBILITY_MATRIX/SET_CORE_VERSION':
-      return { ...state, nuvraCoreVersion: action.payload };
-    case 'COMPATIBILITY_MATRIX/SET_EXTENSION_VERSIONS':
-      return { ...state, extensionVersions: { ...state.extensionVersions, ...action.payload } };
-    case 'COMPATIBILITY_MATRIX/ADD_ISSUE':
-      return { ...state, compatibilityIssues: [...state.compatibilityIssues, action.payload] };
-    case 'COMPATIBILITY_MATRIX/RESOLVE_ISSUE':
-      return { ...state, compatibilityIssues: state.compatibilityIssues.filter(issue => issue.id !== action.payload) };
-    default:
-      return state;
-  }
-}
 // ─── Root Reducer ─────────────────────────────────────────────────────────────
 /**
  * Combines all slice reducers into a single root reducer.

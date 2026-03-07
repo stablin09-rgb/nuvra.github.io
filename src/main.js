@@ -130,6 +130,19 @@ import { AIExtensionLayer }    from './ai/extensions/aiExtensionLayer.js';
 import { ExtensionDevTools }   from './extensions/devtools/extensionDevTools.js';
 import { CompatibilityMatrix } from './extensions/compatibility/compatibilityMatrix.js';
 
+// Phase 10: Extension Runtime & Marketplace Manager
+import { extensionRegistry as p10ExtensionRegistry } from './extensions/extensionRegistry.js';
+import { extensionHost }     from './extensions/extensionHost.js';
+import { extensionLoader }   from './extensions/extensionLoader.js';
+import { sandboxManager }    from './extensions/sandbox.js';
+import { permissionsManager } from './extensions/permissions.js';
+import { editorApi }         from './extensions/api/editorApi.js';
+import { dataApi }           from './extensions/api/dataApi.js';
+import { aiApi }             from './extensions/api/aiApi.js';
+import { marketplaceManager } from './marketplace/marketplaceManager.js';
+import { marketplaceUI }     from './marketplace/marketplaceUI.js';
+import { aiEngine as p10AiEngine } from './ai/aiEngine.js';
+
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 async function boot() {
   // ── Step 1: Install global error handlers ──────────────────────────────────
@@ -391,6 +404,23 @@ async function boot() {
 
   logger.info("main", "Phase 9 modules registered");
 
+  // Phase 10 Modules: Extension Runtime & Marketplace
+  p10ExtensionRegistry.init({ eventBus, store });
+  extensionHost.init({ eventBus, store, sandboxManager, permissionsManager });
+  extensionLoader.init({ eventBus, store, extensionHost: p10ExtensionRegistry });
+  sandboxManager.init({ eventBus, store });
+  permissionsManager.init({ eventBus, store });
+  editorApi.init({ eventBus, store, pageManager });
+  dataApi.init({ eventBus, store });
+  aiApi.init({ eventBus, store });
+  marketplaceManager.init({ eventBus, store, extensionLoader });
+  marketplaceUI.init({ eventBus, store, marketplaceManager });
+  if (p10AiEngine && typeof p10AiEngine.init === 'function') {
+    p10AiEngine.init({ eventBus, store, providerRegistry, budgetEngine });
+  }
+
+  logger.info("main", "Phase 10 modules registered");
+
   // ── Step 25: Start all modules ─────────────────────────────────────────────
   runtime.start();
 
@@ -501,6 +531,14 @@ async function boot() {
   window.aiExtensionLayer = aiExtensionLayer;
   window.extensionDevTools = extensionDevTools;
   window.compatibilityMatrix = compatibilityMatrix;
+  // Phase 10 debug handles
+  window.p10ExtensionRegistry = p10ExtensionRegistry;
+  window.extensionHost = extensionHost;
+  window.extensionLoader = extensionLoader;
+  window.sandboxManager = sandboxManager;
+  window.permissionsManager = permissionsManager;
+  window.marketplaceManager = marketplaceManager;
+  window.marketplaceUI = marketplaceUI;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

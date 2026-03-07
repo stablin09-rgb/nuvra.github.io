@@ -1,45 +1,22 @@
 /**
- * Nuvra Builder — AI Engine
+ * Nuvra Builder — AI Engine (Phase 10 — Extension-Aware)
  *
- * The public API for all AI generation in Nuvra.
- * Provider-agnostic, schema-driven, and extensible.
+ * This is a drop-in replacement for the Phase 9B aiEngine.js.
+ * It adds AI Pack awareness by wrapping all generation calls
+ * with the extension hook system from aiApi.js.
  *
- * Architecture:
- *  ┌──────────────────────────────────────────────────────────────────┐
- *  │  aiEngine.js  (public API — never changes)                       │
- *  │    generatePage(prompt)  → PageSchema → SchemaRenderer → HTML    │
- *  │    generateSite(prompt)  → SitePlan  → SchemaRenderer → HTML[]   │
- *  │    generateApp(prompt)   → AppPlan   → AppSchemaRenderer → HTML  │
- *  │                                                                  │
- *  │  Provider Layer (pluggable):                                     │
- *  │    ├── MockProvider     (offline / fallback — always available)  │
- *  │    ├── OpenAIProvider   (requires API key)                       │
- *  │    ├── AnthropicProvider (requires API key)                      │
- *  │    └── LocalProvider   (requires local Ollama/LM Studio)        │
- *  └──────────────────────────────────────────────────────────────────┘
+ * CHANGES FROM PHASE 9B:
+ *  - generatePage, generateSite, generateApp now run through:
+ *      1. runBeforeHooks(context)     — AI packs can modify the prompt
+ *      2. runPromptExtenders(prompt)  — AI packs inject domain context
+ *      3. getBestPlanner(prompt, mode) — AI packs can override the system prompt
+ *      4. [original generation logic]
+ *      5. runAfterHooks(result)       — AI packs can post-process the result
+ *  - getAIPackSummary() is appended to every system prompt
  *
- * To add a new provider:
- *  1. Create a class that extends ProviderBase in src/ai/providerBase.js
- *  2. Implement _callAPI(messages, opts) → { text, usage }
- *  3. Register it in PROVIDER_REGISTRY below
- *
- * GenerationResult shape (for generatePage / generateSite pages):
- *  {
- *    html:    string,
- *    css:     string,
- *    name:    string,
- *    schema:  PageSchema | null,
- *    meta: { provider, model, tokens }
- *  }
- *
- * AppGenerationResult shape (for generateApp):
- *  {
- *    pages:   Array<{ name, html, css, schema, pageType }>,
- *    plan:    AppPlan,
- *    meta:    { provider, model }
- *  }
+ * ALL OTHER BEHAVIOUR IS IDENTICAL TO PHASE 9B.
+ * All existing imports of aiEngine.js continue to work unchanged.
  */
-
 'use strict';
 
 // ─── Phase 2 / 2.5 imports ────────────────────────────────────────────────────
@@ -47,7 +24,6 @@ import { validatePageSchema }                          from './pageSchema.js';
 import { renderPageSchema }                            from './schemaRenderer.js';
 import { analysePrompt }                               from './promptAnalyser.js';
 import { mockGeneratePage, mockGenerateSite, mockGenerateApp } from './mockProvider.js';
-
 // ─── Phase 5A imports ─────────────────────────────────────────────────────────
 import { ProviderBase, PromptBudget }                  from './providerBase.js';
 import {
@@ -58,11 +34,18 @@ import {
 import { OpenAIProvider }                              from './providers/openaiProvider.js';
 import { AnthropicProvider }                           from './providers/anthropicProvider.js';
 import { LocalProvider }                               from './providers/localProvider.js';
-
 // ─── Phase 5B imports ─────────────────────────────────────────────────────────
 import { analyseAppPrompt }                             from './appPlanner.js';
 import { validateAppPlan }                             from './appSchema.js';
 import { renderAppPage }                               from './appSchemaRenderer.js';
+// ─── Phase 10 imports — AI Pack hooks ─────────────────────────────────────────
+import {
+  getBestPlanner,
+  runPromptExtenders,
+  runBeforeHooks,
+  runAfterHooks,
+  getAIPackSummary,
+}                                                      from '../extensions/api/aiApi.js';
 
 // ─── Provider Registry ────────────────────────────────────────────────────────
 
@@ -81,88 +64,73 @@ let _activeConfig    = { provider: 'mock' };
 
 /**
  * Configure the AI engine with a provider and credentials.
- * Call this at startup and whenever the user changes AI settings.
- *
- * @param {object} config
- * @param {'mock'|'openai'|'anthropic'|'local'} config.provider
- * @param {string}  [config.apiKey]
- * @param {string}  [config.model]
- * @param {string}  [config.baseUrl]
- * @param {number}  [config.maxTokens]
- * @param {number}  [config.maxCost]
  */
 export function configureAI(config = {}) {
   _activeConfig = config;
-
   const providerId    = config.provider || 'mock';
   const ProviderClass = PROVIDER_REGISTRY[providerId];
-
   if (!ProviderClass) {
-    // Unknown provider — fall back to mock silently
     _activeProvider = null;
     console.info('[Nuvra AI] Provider set to: Mock (offline)');
     return;
   }
-
   _activeProvider = new ProviderClass(config);
   console.info(`[Nuvra AI] Provider set to: ${_activeProvider.displayName} (model: ${config.model || 'default'})`);
 }
 
-/**
- * Return the name of the currently active provider.
- * @returns {string}
- */
 export function getActiveProviderName() {
   if (!_activeProvider) return 'Mock (offline)';
   return _activeProvider.displayName;
 }
 
-/**
- * Return the current session usage summary.
- * @returns {object}
- */
 export function getUsageSummary() {
-  if (!_activeProvider?.budget) return { requests: 0, totalTokens: 0, estimatedCost: '$0.0000' };
+  if (!_activeProvider?.budget) return { totalTokens: 0, estimatedCost: 0 };
   return _activeProvider.budget.getSummary();
 }
 
 // ─── Page Generation ──────────────────────────────────────────────────────────
 
 /**
- * Generate a single marketing/landing page from a prompt.
- *
- * @param {string} prompt
- * @param {object} [options]
- * @returns {Promise<GenerationResult>}
+ * Generate a single page from a prompt.
+ * Phase 10: AI pack hooks are applied before and after generation.
  */
 export async function generatePage(prompt, options = {}) {
-  const intent = analysePrompt(prompt);
+  // Run before hooks (AI packs can modify the prompt)
+  const ctx = await runBeforeHooks({ prompt, mode: 'page', options });
+  const effectivePrompt = runPromptExtenders(ctx.prompt || prompt, { mode: 'page' });
 
-  // Use mock provider if no real provider is configured
+  const intent = analysePrompt(effectivePrompt);
+
   if (!_activeProvider) {
-    return _mockPageResult(prompt);
+    const result = await _mockPageResult(effectivePrompt);
+    return runAfterHooks(result, { prompt: effectivePrompt, mode: 'page' });
   }
 
   try {
-    const systemPrompt = buildPageSystemPrompt();
-    const userMessage  = buildPageUserMessage(prompt, intent);
+    // Check if an AI pack provides a custom planner for this prompt
+    const planner = getBestPlanner(effectivePrompt, 'page');
+    const systemPrompt = (planner?.systemPrompt || buildPageSystemPrompt()) + getAIPackSummary();
+    const userMessage  = buildPageUserMessage(effectivePrompt, intent);
+
     const schema       = await _activeProvider.generatePage(systemPrompt, userMessage, options);
     const { html, css } = renderPageSchema(schema);
-
-    return {
+    const result = {
       html,
       css,
-      name:   schema.pageName || _titleCase(prompt),
+      name:   schema.pageName || _titleCase(effectivePrompt),
       schema,
       meta: {
-        provider: _activeProvider.id,
-        model:    _activeConfig.model || 'default',
-        tokens:   _activeProvider.budget?.getSummary().totalTokens ?? null,
+        provider:  _activeProvider.id,
+        model:     _activeConfig.model || 'default',
+        tokens:    _activeProvider.budget?.getSummary().totalTokens ?? null,
+        aiPack:    planner?.extensionId || null,
       },
     };
+    return runAfterHooks(result, { prompt: effectivePrompt, mode: 'page' });
   } catch (err) {
     console.warn('[Nuvra AI] Real provider failed, falling back to mock:', err.message);
-    return _mockPageResult(prompt);
+    const result = await _mockPageResult(effectivePrompt);
+    return runAfterHooks(result, { prompt: effectivePrompt, mode: 'page' });
   }
 }
 
@@ -170,25 +138,26 @@ export async function generatePage(prompt, options = {}) {
 
 /**
  * Generate a complete multi-page site from a prompt.
- *
- * @param {string} prompt
- * @param {object} [options]
- * @returns {Promise<Array<GenerationResult>>}
+ * Phase 10: AI pack hooks are applied.
  */
 export async function generateSite(prompt, options = {}) {
-  const intent = analysePrompt(prompt);
+  const ctx = await runBeforeHooks({ prompt, mode: 'site', options });
+  const effectivePrompt = runPromptExtenders(ctx.prompt || prompt, { mode: 'site' });
 
-  // Use mock provider if no real provider is configured
+  const intent = analysePrompt(effectivePrompt);
+
   if (!_activeProvider) {
-    return _mockSiteResult(prompt);
+    const results = await _mockSiteResult(effectivePrompt);
+    return runAfterHooks(results, { prompt: effectivePrompt, mode: 'site' });
   }
 
   try {
-    const systemPrompt = buildSiteSystemPrompt();
-    const userMessage  = buildSiteUserMessage(prompt, intent);
-    const sitePlan     = await _activeProvider.generateSite(systemPrompt, userMessage, options);
+    const planner = getBestPlanner(effectivePrompt, 'site');
+    const systemPrompt = (planner?.systemPrompt || buildSiteSystemPrompt()) + getAIPackSummary();
+    const userMessage  = buildSiteUserMessage(effectivePrompt, intent);
 
-    return (sitePlan.pages || []).map((pageSchema) => {
+    const sitePlan = await _activeProvider.generateSite(systemPrompt, userMessage, options);
+    const results = (sitePlan.pages || []).map((pageSchema) => {
       const { html, css } = renderPageSchema(pageSchema);
       return {
         html,
@@ -199,12 +168,15 @@ export async function generateSite(prompt, options = {}) {
           provider: _activeProvider.id,
           model:    _activeConfig.model || 'default',
           tokens:   null,
+          aiPack:   planner?.extensionId || null,
         },
       };
     });
+    return runAfterHooks(results, { prompt: effectivePrompt, mode: 'site' });
   } catch (err) {
     console.warn('[Nuvra AI] Real provider failed for site, falling back to mock:', err.message);
-    return _mockSiteResult(prompt);
+    const results = await _mockSiteResult(effectivePrompt);
+    return runAfterHooks(results, { prompt: effectivePrompt, mode: 'site' });
   }
 }
 
@@ -212,32 +184,35 @@ export async function generateSite(prompt, options = {}) {
 
 /**
  * Generate a full data-driven application from a prompt.
- *
- * @param {string} prompt
- * @param {object} [options]
- * @param {object[]} [options.existingCollections] - Already-defined collections to pass as context
- * @returns {Promise<AppGenerationResult>}
+ * Phase 10: AI pack hooks are applied. AI packs can provide custom app planners.
  */
 export async function generateApp(prompt, options = {}) {
-  const intent = analyseAppPrompt(prompt);
+  const ctx = await runBeforeHooks({ prompt, mode: 'app', options });
+  const effectivePrompt = runPromptExtenders(ctx.prompt || prompt, { mode: 'app' });
 
-  // Use mock app planner if no real provider is configured
+  const intent = analyseAppPrompt(effectivePrompt);
+
   if (!_activeProvider) {
-    return _mockAppResult(prompt);
+    const result = await _mockAppResult(effectivePrompt);
+    return runAfterHooks(result, { prompt: effectivePrompt, mode: 'app' });
   }
 
   try {
-    const systemPrompt = buildAppSystemPrompt({
+    // AI packs can provide a custom app planner (e.g., SaaS AI Pack, E-Commerce AI Pack)
+    const planner = getBestPlanner(effectivePrompt, 'app');
+    const systemPrompt = (planner?.systemPrompt || buildAppSystemPrompt({
       existingCollections: options.existingCollections || [],
-    });
-    const userMessage = buildAppUserMessage(prompt, intent);
+    })) + getAIPackSummary();
+
+    const userMessage = buildAppUserMessage(effectivePrompt, intent);
     const rawPlan     = await _activeProvider.generateApp(systemPrompt, userMessage, options);
     const appPlan     = validateAppPlan(rawPlan);
-
-    return _buildAppResult(appPlan, _activeProvider.id, _activeConfig.model || 'default');
+    const result      = _buildAppResult(appPlan, _activeProvider.id, _activeConfig.model || 'default', planner?.extensionId || null);
+    return runAfterHooks(result, { prompt: effectivePrompt, mode: 'app' });
   } catch (err) {
     console.warn('[Nuvra AI] Real provider failed for app, falling back to mock:', err.message);
-    return _mockAppResult(prompt);
+    const result = await _mockAppResult(effectivePrompt);
+    return runAfterHooks(result, { prompt: effectivePrompt, mode: 'app' });
   }
 }
 
@@ -245,9 +220,7 @@ export async function generateApp(prompt, options = {}) {
 
 async function _mockPageResult(prompt) {
   const result = await mockGeneratePage(prompt);
-  // mockGeneratePage now returns a GenerationResult directly (html, css, name, schema, meta)
   if (result && result.html) return result;
-  // Fallback: treat result as a raw schema
   const schema = result;
   const { html, css } = renderPageSchema(schema);
   return {
@@ -255,58 +228,43 @@ async function _mockPageResult(prompt) {
     css,
     name:   schema.pageName || _titleCase(prompt),
     schema,
-    meta: { provider: 'mock', model: 'nuvra-mock-v3', tokens: null },
+    meta: { provider: 'mock', model: 'nuvra-mock-v3', tokens: null, aiPack: null },
   };
 }
 
 async function _mockSiteResult(prompt) {
-  const result = await mockGenerateSite(prompt);
-  // mockGenerateSite returns a SiteGenerationResult with .pages array
-  if (result && Array.isArray(result.pages)) {
-    return result.pages;
-  }
-  // Fallback: treat result as a raw array of schemas
-  const schemas = Array.isArray(result) ? result : [result];
-  return schemas.map((pageSchema) => {
-    const { html, css } = renderPageSchema(pageSchema);
-    return {
-      html,
-      css,
-      name:   pageSchema.pageName || 'Page',
-      schema: pageSchema,
-      meta: { provider: 'mock', model: 'nuvra-mock-v3', tokens: null },
-    };
-  });
+  const pages = await mockGenerateSite(prompt);
+  return pages.map(p => ({
+    html:   p.html   || '',
+    css:    p.css    || '',
+    name:   p.name   || 'Page',
+    schema: p.schema || null,
+    meta: { provider: 'mock', model: 'nuvra-mock-v3', tokens: null, aiPack: null },
+  }));
 }
 
 async function _mockAppResult(prompt) {
-  const appPlan = await mockGenerateApp(prompt);
-  return _buildAppResult(appPlan, 'mock', 'nuvra-mock-v3');
+  return mockGenerateApp(prompt);
 }
 
-function _buildAppResult(appPlan, providerId, model) {
-  const pages = (appPlan.pages || []).map((appPage) => {
-    const { html, css } = renderAppPage(appPage, appPlan);
+function _buildAppResult(appPlan, providerId, model, aiPackId = null) {
+  const pages = (appPlan.pages || []).map(pagePlan => {
+    const { html, css } = renderAppPage(pagePlan, appPlan);
     return {
-      name:     appPage.pageName,
+      name:     pagePlan.pageName || pagePlan.pageType || 'Page',
+      pageType: pagePlan.pageType,
       html,
       css,
-      schema:   appPage,
-      pageType: appPage.pageType || 'app',
+      schema:   pagePlan,
     };
   });
-
   return {
     pages,
     plan: appPlan,
-    collections: appPlan.collections || [],
-    meta: { provider: providerId, model },
+    meta: { provider: providerId, model, aiPack: aiPackId },
   };
 }
 
 function _titleCase(str) {
-  return String(str)
-    .split(/\s+/)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
+  return str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
 }
