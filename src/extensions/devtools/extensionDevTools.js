@@ -14,11 +14,11 @@
  * - DX report: comprehensive report of extension health and issues
  */
 
-const { ManifestValidator } = require('../manifest/manifestValidator');
-const { ExtensionGovernance } = require('../../governance/extensions/extensionGovernance');
 
 // ─── ExtensionDevTools ────────────────────────────────────────────────────────
 
+import { ManifestValidator } from '../manifest/manifestValidator.js';
+import { ExtensionGovernance } from '../../governance/extensions/extensionGovernance.js';
 class ExtensionDevTools {
   /**
    * @param {object} options

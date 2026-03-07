@@ -8,8 +8,8 @@
  * Supports instant plan upgrades, downgrades, and cancellations.
  */
 
-const { BillingProviderContract } = require('./billingContract');
 
+import { BillingProviderContract } from './billingContract.js';
 class LocalBillingProvider extends BillingProviderContract {
   constructor() {
     super();

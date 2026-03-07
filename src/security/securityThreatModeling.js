@@ -6,8 +6,8 @@
  * privilege escalation attempts.
  */
 
-const { logger } = require("../diagnostics/logger");
 
+import { logger } from '../diagnostics/logger.js';
 class SecurityThreatModeling {
   /**
    * @param {object} options

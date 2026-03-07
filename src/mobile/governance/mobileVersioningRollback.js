@@ -6,8 +6,8 @@
  * for safe updates and migrations.
  */
 
-const { logger } = require("../../diagnostics/logger");
 
+import { logger } from '../../diagnostics/logger.js';
 class MobileVersioningRollback {
   /**
    * @param {object} options

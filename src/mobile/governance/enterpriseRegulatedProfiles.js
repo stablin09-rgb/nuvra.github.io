@@ -6,9 +6,9 @@
  * audit logging, and data residency for each profile.
  */
 
-const MobileRuntimeContract = require("./mobileRuntimeContract");
-const { logger } = require("../../diagnostics/logger");
 
+import MobileRuntimeContract from './mobileRuntimeContract.js';
+import { logger } from '../../diagnostics/logger.js';
 class EnterpriseRegulatedProfiles {
   /**
    * @param {object} options

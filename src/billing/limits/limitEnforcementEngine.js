@@ -17,11 +17,12 @@
  * Every enforcement decision is logged to the billing audit trail.
  */
 
-const { EntitlementManager } = require('../plans/entitlementManager');
-const { Dimension }          = require('../ledger/usageDimensions');
 
 // ─── Enforcement Codes ────────────────────────────────────────────────────────
 
+import { EntitlementManager } from '../plans/entitlementManager.js';
+import { Dimension } from '../ledger/usageDimensions.js';
+import { getEntitlement } from '../plans/planDefinitions.js';
 const EnforcementCode = Object.freeze({
   ALLOWED:              'ALLOWED',
   SOFT_WARNING:         'SOFT_WARNING',
@@ -233,7 +234,6 @@ class LimitEnforcementEngine {
   }
 
   _getGracePeriodHours(planId, dimension) {
-    const { getEntitlement } = require('../plans/planDefinitions');
     const ent = getEntitlement(planId, dimension);
     return ent ? (ent.gracePeriodHours || 0) : 0;
   }

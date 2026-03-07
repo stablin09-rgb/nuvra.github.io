@@ -7,8 +7,8 @@
  * Uses the Stripe REST API directly (no SDK dependency).
  */
 
-const { BillingProviderContract } = require('./billingContract');
 
+import { BillingProviderContract } from './billingContract.js';
 class StripeProvider extends BillingProviderContract {
   /**
    * @param {object} options
@@ -178,4 +178,5 @@ class StripeProvider extends BillingProviderContract {
   }
 }
 
-module.exports = { StripeProvider };
+export { StripeProvider };
+export default StripeProvider;

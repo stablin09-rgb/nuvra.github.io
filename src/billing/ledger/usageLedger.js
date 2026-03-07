@@ -21,10 +21,11 @@
  *  - Abuse detection (AbuseDetector)
  */
 
-const { createEntry, getDimensionMeta, Dimension } = require('./usageDimensions');
 
 // ─── Ledger Class ─────────────────────────────────────────────────────────────
 
+import { createEntry, getDimensionMeta, Dimension } from './usageDimensions.js';
+import { getAllDimensions } from './usageDimensions.js';
 class UsageLedger {
   /**
    * @param {object} options
@@ -158,7 +159,6 @@ class UsageLedger {
    */
   getSummary(userId, since, until) {
     const summary = {};
-    const { getAllDimensions } = require('./usageDimensions');
 
     for (const dim of getAllDimensions()) {
       summary[dim.id] = {

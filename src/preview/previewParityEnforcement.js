@@ -6,9 +6,9 @@
  * blocking features that won't work and simulating mobile-specific conditions.
  */
 
-const MobileRuntimeContract = require("../mobile/governance/mobileRuntimeContract");
-const { logger } = require("../diagnostics/logger");
 
+import MobileRuntimeContract from '../mobile/governance/mobileRuntimeContract.js';
+import { logger } from '../diagnostics/logger.js';
 class PreviewParityEnforcement {
   /**
    * @param {object} options

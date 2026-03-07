@@ -7,8 +7,8 @@
  * Paddle handles VAT/tax automatically, making it ideal for EU/global SaaS.
  */
 
-const { BillingProviderContract } = require('./billingContract');
 
+import { BillingProviderContract } from './billingContract.js';
 class PaddleProvider extends BillingProviderContract {
   /**
    * @param {object} options
@@ -133,4 +133,5 @@ class PaddleProvider extends BillingProviderContract {
   }
 }
 
-module.exports = { PaddleProvider };
+export { PaddleProvider };
+export default PaddleProvider;

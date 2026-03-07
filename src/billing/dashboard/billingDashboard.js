@@ -17,10 +17,11 @@
  *  - Upgrade recommendations
  */
 
-const { UsageLedger }        = require('../ledger/usageLedger');
-const { Dimension }          = require('../ledger/usageDimensions');
-const { getPlan, getAllPlans, isUpgrade } = require('../plans/planDefinitions');
 
+import { UsageLedger } from '../ledger/usageLedger.js';
+import { Dimension } from '../ledger/usageDimensions.js';
+import { getPlan, getAllPlans, isUpgrade } from '../plans/planDefinitions.js';
+import { getDimensionMeta } from '../ledger/usageDimensions.js';
 class BillingDashboard {
   /**
    * @param {object} options
@@ -212,7 +213,6 @@ class BillingDashboard {
   }
 
   _getUnit(dimension) {
-    const { getDimensionMeta } = require('../ledger/usageDimensions');
     const meta = getDimensionMeta(dimension);
     return meta ? meta.unit : 'units';
   }

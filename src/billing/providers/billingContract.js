@@ -63,4 +63,5 @@ class BillingProviderContract {
   getPlanMapping() { throw new Error('Not implemented'); }
 }
 
-module.exports = { BillingProviderContract };
+export { BillingProviderContract };
+export default BillingProviderContract;

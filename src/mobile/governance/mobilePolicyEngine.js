@@ -6,9 +6,9 @@
  * compliance warnings for mobile applications.
  */
 
-const MobileRuntimeContract = require('./mobileRuntimeContract');
-const CapabilityDeclarationSystem = require('./capabilityDeclarationSystem');
 
+import MobileRuntimeContract from './mobileRuntimeContract.js';
+import CapabilityDeclarationSystem from './capabilityDeclarationSystem.js';
 class MobilePolicyEngine {
   /**
    * @param {object} options

@@ -7,8 +7,8 @@
  * calls the registry — never a specific provider directly.
  */
 
-const { LocalBillingProvider } = require('./localBillingProvider');
 
+import { LocalBillingProvider } from './localBillingProvider.js';
 class BillingProviderRegistry {
   constructor() {
     this._providers = new Map();

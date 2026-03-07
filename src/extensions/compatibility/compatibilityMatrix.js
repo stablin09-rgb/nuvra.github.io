@@ -19,10 +19,10 @@
  * - Minor/patch versions are always backwards compatible within the same major
  */
 
-const { NUVRA_CURRENT_VERSION } = require('../manifest/manifestValidator');
 
 // ─── Extension API Versions ───────────────────────────────────────────────────
 
+import { NUVRA_CURRENT_VERSION } from '../manifest/manifestValidator.js';
 const API_VERSIONS = Object.freeze({
   'v1': {
     coreRange:    '>=1.0.0 <2.0.0',

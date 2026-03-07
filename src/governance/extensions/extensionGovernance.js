@@ -14,10 +14,10 @@
  * - Compliance reporting: per-extension audit trail
  */
 
-const { TrustTier, Permission } = require('../../extensions/manifest/extensionTypes');
 
 // ─── Review Status ────────────────────────────────────────────────────────────
 
+import { TrustTier, Permission } from '../../extensions/manifest/extensionTypes.js';
 const ReviewStatus = Object.freeze({
   PENDING:   'pending',
   APPROVED:  'approved',

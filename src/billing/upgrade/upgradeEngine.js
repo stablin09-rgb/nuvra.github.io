@@ -15,10 +15,13 @@
  *    at the start of the next billing period.
  */
 
-const { getPlan, isUpgrade, getEntitlement } = require('../plans/planDefinitions');
 
 // ─── Transition Types ─────────────────────────────────────────────────────────
 
+import { getPlan, isUpgrade, getEntitlement } from '../plans/planDefinitions.js';
+import { Dimension, getAllDimensions } from '../ledger/usageDimensions.js';
+import { UsageLedger } from '../ledger/usageLedger.js';
+import { getAllDimensions } from '../ledger/usageDimensions.js';
 const TransitionType = Object.freeze({
   UPGRADE:   'upgrade',
   DOWNGRADE: 'downgrade',
@@ -218,7 +221,6 @@ class UpgradeEngine {
   }
 
   _getLimitChanges(fromPlanId, toPlanId) {
-    const { Dimension, getAllDimensions } = require('../ledger/usageDimensions');
     const changes = [];
 
     for (const dim of getAllDimensions()) {
@@ -243,8 +245,6 @@ class UpgradeEngine {
   _getDowngradeWarnings(userId, fromPlanId, toPlanId) {
     if (isUpgrade(fromPlanId, toPlanId)) return [];
 
-    const { UsageLedger }    = require('../ledger/usageLedger');
-    const { getAllDimensions } = require('../ledger/usageDimensions');
     const { since, until }   = UsageLedger.currentMonthWindow();
     const warnings           = [];
 

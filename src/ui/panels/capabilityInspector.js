@@ -6,9 +6,9 @@
  * data sensitivity, platform support, and consent requirements.
  */
 
-const { logger } = require("../../diagnostics/logger");
-const CapabilityDeclarationSystem = require("../../mobile/governance/capabilityDeclarationSystem");
 
+import { logger } from '../../diagnostics/logger.js';
+import CapabilityDeclarationSystem from '../../mobile/governance/capabilityDeclarationSystem.js';
 class CapabilityInspector {
   /**
    * @param {object} options

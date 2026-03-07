@@ -19,10 +19,10 @@
  *   - Experimental extensions: not eligible for paid listing
  */
 
-const { TrustTier } = require('../../extensions/manifest/extensionTypes');
 
 // ─── Revenue Split Rates ──────────────────────────────────────────────────────
 
+import { TrustTier } from '../../extensions/manifest/extensionTypes.js';
 const REVENUE_SPLITS = Object.freeze({
   [TrustTier.VERIFIED]:     { creator: 0.80, platform: 0.20 },
   [TrustTier.COMMUNITY]:    { creator: 0.70, platform: 0.30 },

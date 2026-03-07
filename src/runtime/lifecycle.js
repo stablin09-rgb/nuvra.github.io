@@ -135,3 +135,8 @@ export class ModuleLifecycle {
 }
 
 export default ModuleLifecycle;
+
+
+// Compatibility export for modules that import { runtime } from lifecycle.js
+import { runtime } from './coreRuntime.js';
+export { runtime };

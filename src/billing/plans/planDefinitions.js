@@ -13,10 +13,10 @@
  *  - Extensible: new dimensions can be added without breaking existing plans.
  */
 
-const { Dimension } = require('../ledger/usageDimensions');
 
 // ─── Plan IDs ─────────────────────────────────────────────────────────────────
 
+import { Dimension } from '../ledger/usageDimensions.js';
 const PlanId = Object.freeze({
   FREE:       'free',
   STARTER:    'starter',
@@ -274,7 +274,7 @@ function isUpgrade(fromPlanId, toPlanId) {
   return order.indexOf(toPlanId) > order.indexOf(fromPlanId);
 }
 
-module.exports = {
+export {
   PlanId, ResetWindow, PLANS,
   getPlan, getAllPlans, getEntitlement, isModelAllowed, isUpgrade,
 };

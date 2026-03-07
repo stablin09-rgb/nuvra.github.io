@@ -16,12 +16,12 @@
  * AI must refuse requests when any budget is exceeded — politely and clearly.
  */
 
-const { Dimension } = require('../ledger/usageDimensions');
 
 // ─── Provider Pricing ─────────────────────────────────────────────────────────
 // Prices in USD per 1,000 tokens. Updated as of early 2026.
 // These are configurable — AI prices change weekly.
 
+import { Dimension } from '../ledger/usageDimensions.js';
 const PROVIDER_PRICING = {
   'openai': {
     'gpt-4o':      { inputPer1k: 0.005,  outputPer1k: 0.015  },
@@ -223,7 +223,7 @@ class AICostGovernance {
    * Returns the monthly AI cost for a user from the ledger.
    */
   getMonthlySpend(userId) {
-    const { since, until } = require('../ledger/usageLedger').UsageLedger.currentMonthWindow();
+    const { since, until } = /* require removed: ../ledger/usageLedger */ ({}).UsageLedger.currentMonthWindow();
     return this._ledger.getAICostUSD(userId, since, until);
   }
 
@@ -231,7 +231,7 @@ class AICostGovernance {
    * Returns the monthly AI cost for a project from the ledger.
    */
   getProjectMonthlySpend(projectId) {
-    const { since, until } = require('../ledger/usageLedger').UsageLedger.currentMonthWindow();
+    const { since, until } = /* require removed: ../ledger/usageLedger */ ({}).UsageLedger.currentMonthWindow();
     return this._ledger.getProjectAICostUSD(projectId, since, until);
   }
 
@@ -280,7 +280,7 @@ class AICostGovernance {
     const limit = this._projectBudgets.get(projectId);
     if (limit === undefined) return { allowed: true };
 
-    const { since, until } = require('../ledger/usageLedger').UsageLedger.currentMonthWindow();
+    const { since, until } = /* require removed: ../ledger/usageLedger */ ({}).UsageLedger.currentMonthWindow();
     const spent = this._ledger.getProjectAICostUSD(projectId, since, until);
 
     if (spent + estimatedCost > limit) {
@@ -299,7 +299,7 @@ class AICostGovernance {
     const limit = this._providerBudgets.get(key);
     if (limit === undefined) return { allowed: true };
 
-    const { since, until } = require('../ledger/usageLedger').UsageLedger.currentMonthWindow();
+    const { since, until } = /* require removed: ../ledger/usageLedger */ ({}).UsageLedger.currentMonthWindow();
     const spent = this._ledger.aggregate({ dimension: Dimension.AI_COST_USD, userId, provider, since, until });
 
     if (spent + estimatedCost > limit) {

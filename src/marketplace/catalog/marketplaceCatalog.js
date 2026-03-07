@@ -17,11 +17,11 @@
  * it is a local in-memory catalog that can be hydrated from a JSON feed.
  */
 
-const { TrustTier } = require('../../extensions/manifest/extensionTypes');
-const { NUVRA_CURRENT_VERSION } = require('../../extensions/manifest/manifestValidator');
 
 // ─── Listing Record ───────────────────────────────────────────────────────────
 
+import { TrustTier } from '../../extensions/manifest/extensionTypes.js';
+import { NUVRA_CURRENT_VERSION } from '../../extensions/manifest/manifestValidator.js';
 function makeListingRecord(data) {
   return {
     id:           data.id,

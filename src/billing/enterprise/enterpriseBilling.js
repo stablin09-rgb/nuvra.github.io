@@ -14,9 +14,9 @@
  *  - Budget alerts (notify finance when org spend exceeds threshold)
  */
 
-const { UsageLedger } = require('../ledger/usageLedger');
-const { Dimension }   = require('../ledger/usageDimensions');
 
+import { UsageLedger } from '../ledger/usageLedger.js';
+import { Dimension } from '../ledger/usageDimensions.js';
 class EnterpriseBilling {
   /**
    * @param {object} options

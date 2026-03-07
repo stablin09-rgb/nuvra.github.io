@@ -7,8 +7,8 @@
  * Popular with indie developers; handles tax, VAT, and global payments.
  */
 
-const { BillingProviderContract } = require('./billingContract');
 
+import { BillingProviderContract } from './billingContract.js';
 class LemonSqueezyProvider extends BillingProviderContract {
   /**
    * @param {object} options
@@ -133,4 +133,5 @@ class LemonSqueezyProvider extends BillingProviderContract {
   }
 }
 
-module.exports = { LemonSqueezyProvider };
+export { LemonSqueezyProvider };
+export default LemonSqueezyProvider;

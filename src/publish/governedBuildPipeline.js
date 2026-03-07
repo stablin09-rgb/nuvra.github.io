@@ -7,9 +7,9 @@
  * and compliant mobile application packages.
  */
 
-const MobilePolicyEngine = require("../mobile/governance/mobilePolicyEngine");
-const { logger } = require("../diagnostics/logger");
 
+import MobilePolicyEngine from '../mobile/governance/mobilePolicyEngine.js';
+import { logger } from '../diagnostics/logger.js';
 class GovernedBuildPipeline {
   /**
    * @param {object} options

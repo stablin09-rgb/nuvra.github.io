@@ -6,9 +6,9 @@
  * are inherently mobile-friendly and compliant.
  */
 
-const MobileRuntimeContract = require("../../mobile/governance/mobileRuntimeContract");
-const CapabilityDeclarationSystem = require("../../mobile/governance/capabilityDeclarationSystem");
 
+import MobileRuntimeContract from '../../mobile/governance/mobileRuntimeContract.js';
+import CapabilityDeclarationSystem from '../../mobile/governance/capabilityDeclarationSystem.js';
 class MobileAwarePlanner {
   /**
    * @param {object} options
