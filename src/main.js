@@ -108,6 +108,19 @@ import { BillingDashboard }       from './billing/dashboard/billingDashboard.js'
 import { UpgradeEngine }          from './billing/upgrade/upgradeEngine.js';
 import { EnterpriseBilling }      from './billing/enterprise/enterpriseBilling.js';
 
+// Phase 9: Mobile Outputs Governance & Runtime Parity
+import { MobileRuntimeContract } from './mobile/governance/mobileRuntimeContract.js';
+import { CapabilityDeclarationSystem } from './mobile/governance/capabilityDeclarationSystem.js';
+import { MobilePolicyEngine } from './mobile/governance/mobilePolicyEngine.js';
+import { MobileAwarePlanner } from './ai/planning/mobileAwarePlanner.js';
+import { PreviewParityEnforcement } from './preview/previewParityEnforcement.js';
+import { GovernedBuildPipeline } from './publish/governedBuildPipeline.js';
+import { EnterpriseRegulatedProfiles } from './mobile/governance/enterpriseRegulatedProfiles.js';
+import { MobileVersioningRollback } from './mobile/governance/mobileVersioningRollback.js';
+import { SecurityThreatModeling } from './security/securityThreatModeling.js';
+import { MobileReadinessDashboard } from './ui/panels/mobileReadinessDashboard.js';
+import { CapabilityInspector } from './ui/panels/capabilityInspector.js';
+
 // Phase 8: Extensions & Marketplace
 import { ExtensionRegistry }   from './extensions/registry/extensionRegistry.js';
 import { MarketplaceCatalog }  from './marketplace/catalog/marketplaceCatalog.js';
@@ -252,130 +265,137 @@ async function boot() {
   }
 
   // ── Step 9: Initialize Ownership Manager ───────────────────────────────────
-  const ownershipManager = new OwnershipManager({ store, eventBus, logger });
+  const ownershipManager = new OwnershipManager({ eventBus, store });
   logger.info('main', 'Ownership manager initialized');
 
   // ── Step 10: Initialize Cloud Storage ──────────────────────────────────────
-  const cloudStorage = new CloudStorage({ cloudAdapter, logger });
+  const cloudStorage = new CloudStorage({ cloudAdapter, eventBus });
   logger.info('main', 'Cloud storage initialized');
 
   // ── Step 11: Initialize Sync Engine ────────────────────────────────────────
-  const syncEngine = new SyncEngine({ cloudAdapter, store, eventBus, logger });
+  const syncEngine = new SyncEngine({ cloudAdapter, store, eventBus, ownershipManager });
   logger.info('main', 'Sync engine initialized');
 
   // ── Step 12: Initialize Reconciliation Engine ──────────────────────────────
-  const reconciliationEngine = new ReconciliationEngine({ store, eventBus, logger });
+  const reconciliationEngine = new ReconciliationEngine({ cloudAdapter, store, eventBus });
   logger.info('main', 'Reconciliation engine initialized');
 
   // ── Step 13: Initialize AI Safety Boundary ─────────────────────────────────
-  const aiSafetyBoundary = new AISafetyBoundary({ logger });
+  const aiSafetyBoundary = new AISafetyBoundary({ eventBus, store });
   logger.info('main', 'AI Safety Boundary initialized');
 
   // ── Step 14: Initialize AI Governance Layer ────────────────────────────────
-  const aiGovernanceLayer = new AIGovernanceLayer({ store, eventBus, logger });
+  const aiGovernanceLayer = new AIGovernanceLayer({ eventBus, store });
   logger.info('main', 'AI Governance Layer initialized');
 
   // ── Step 15: Initialize Usage Ledger ───────────────────────────────────────
-  const usageLedger = new UsageLedger({ store, eventBus, logger });
+  const usageLedger = new UsageLedger({ eventBus, store });
   logger.info('main', 'Usage Ledger initialized');
 
   // ── Step 16: Initialize Entitlement Manager ────────────────────────────────
-  const entitlementManager = new EntitlementManager({ store, eventBus, logger });
+  const entitlementManager = new EntitlementManager({ eventBus, store });
   logger.info('main', 'Entitlement Manager initialized');
 
   // ── Step 17: Initialize Limit Enforcement Engine ───────────────────────────
-  const limitEnforcementEngine = new LimitEnforcementEngine({ store, eventBus, logger });
+  const limitEnforcementEngine = new LimitEnforcementEngine({ eventBus, store });
   logger.info('main', 'Limit Enforcement Engine initialized');
 
   // ── Step 18: Initialize AI Cost Governance ─────────────────────────────────
-  const aiCostGovernance = new AICostGovernance({ store, eventBus, logger });
+  const aiCostGovernance = new AICostGovernance({ eventBus, store });
   logger.info('main', 'AI Cost Governance initialized');
 
   // ── Step 19: Initialize Billing Provider Registry ──────────────────────────
-  const billingProviders = new BillingProviderRegistry({ logger });
-  billingProviders.register(new LocalBillingProvider());
+  const billingProviderRegistry = new BillingProviderRegistry({ eventBus });
+  billingProviderRegistry.register(new LocalBillingProvider());
   logger.info('main', 'Billing Provider Registry initialized');
 
   // ── Step 20: Initialize Abuse Detector ─────────────────────────────────────
-  const abuseDetector = new AbuseDetector({ eventBus, logger });
+  const abuseDetector = new AbuseDetector({ eventBus, store });
   logger.info('main', 'Abuse Detector initialized');
 
   // ── Step 21: Initialize Billing Dashboard ──────────────────────────────────
-  const billingDashboard = new BillingDashboard({ store, eventBus, logger });
+  const billingDashboard = new BillingDashboard({ eventBus, store });
   logger.info('main', 'Billing Dashboard initialized');
 
   // ── Step 22: Initialize Upgrade Engine ─────────────────────────────────────
-  const upgradeEngine = new UpgradeEngine({
-    billingProviderRegistry: billingProviders,
-    ledger:                  usageLedger,
-    eventBus,
-    logger,
-  });
+  const upgradeEngine = new UpgradeEngine({ eventBus, store });
   logger.info('main', 'Upgrade Engine initialized');
 
   // ── Step 23: Initialize Enterprise Billing ─────────────────────────────────
-  const enterpriseBilling = new EnterpriseBilling({ ledger: usageLedger, eventBus, logger });
-  logger.info('main', 'Enterprise billing initialized');
-
-  // ── Phase 8: Extensions & Marketplace Initializations ──────────────────────
-  const aiExtensionLayer = new AIExtensionLayer({ logger });
-  logger.info('main', 'AI Extension Layer initialized');
-
-  const extensionGovernance = new ExtensionGovernance({ logger, securityScanner });
-  logger.info('main', 'Extension Governance initialized');
-
-  const extensionRegistry = new ExtensionRegistry({ logger, eventBus, store });
-  logger.info('main', 'Extension Registry initialized');
-
-  const marketplaceCatalog = new MarketplaceCatalog({ logger, eventBus, extensionGovernance });
-  logger.info('main', 'Marketplace Catalog initialized');
-
-  const revenueEngine = new RevenueEngine({ logger, eventBus });
-  logger.info('main', 'Revenue Engine initialized');
-
-  const compatibilityMatrix = new CompatibilityMatrix({ nuvraCoreVersion: NUVRA_CURRENT_VERSION, logger });
-  logger.info('main', 'Compatibility Matrix initialized');
-
-  const extensionDevTools = new ExtensionDevTools({ registry: extensionRegistry, governance: extensionGovernance, catalog: marketplaceCatalog, logger });
-  logger.info('main', 'Extension Dev Tools initialized');
+  const enterpriseBilling = new EnterpriseBilling({ eventBus, store });
+  logger.info('main', 'Enterprise Billing initialized');
 
   // ── Step 24: Register all modules ──────────────────────────────────────────
-  runtime
-    .register(pageManager)
-    .register(editorShell)
-    .register(secretsManager)
-    .register(providerRegistry)
-    .register(budgetEngine)
-    .register(authManager)
-    .register(cloudAdapter)
-    .register(ownershipManager)
-    .register(cloudStorage)
-    .register(syncEngine)
-    .register(reconciliationEngine)
-    .register(aiSafetyBoundary)
-    .register(aiGovernanceLayer)
-    .register(usageLedger)
-    .register(entitlementManager)
-    .register(limitEnforcementEngine)
-    .register(aiCostGovernance)
-    .register(billingProviders)
-    .register(abuseDetector)
-    .register(billingDashboard)
-    .register(upgradeEngine)
-    .register(enterpriseBilling)
-    .register(aiExtensionLayer)
-    .register(extensionGovernance)
-    .register(extensionRegistry)
-    .register(marketplaceCatalog)
-    .register(revenueEngine)
-    .register(compatibilityMatrix)
-    .register(extensionDevTools);
+  runtime.registerModule('secretsManager', secretsManager);
+  runtime.registerModule('authManager', authManager);
+  runtime.registerModule('cloudAdapter', cloudAdapter);
+  runtime.registerModule('ownershipManager', ownershipManager);
+  runtime.registerModule('cloudStorage', cloudStorage);
+  runtime.registerModule('syncEngine', syncEngine);
+  runtime.registerModule('reconciliationEngine', reconciliationEngine);
+  runtime.registerModule('aiSafetyBoundary', aiSafetyBoundary);
+  runtime.registerModule('aiGovernanceLayer', aiGovernanceLayer);
+  runtime.registerModule('usageLedger', usageLedger);
+  runtime.registerModule('entitlementManager', entitlementManager);
+  runtime.registerModule('limitEnforcementEngine', limitEnforcementEngine);
+  runtime.registerModule('aiCostGovernance', aiCostGovernance);
+  runtime.registerModule('billingProviderRegistry', billingProviderRegistry);
+  runtime.registerModule('abuseDetector', abuseDetector);
+  runtime.registerModule('billingDashboard', billingDashboard);
+  runtime.registerModule('upgradeEngine', upgradeEngine);
+  runtime.registerModule('enterpriseBilling', enterpriseBilling);
+
+  // Phase 8 Modules
+  const extensionRegistry = new ExtensionRegistry({ eventBus, store });
+  const marketplaceCatalog = new MarketplaceCatalog({ eventBus, store });
+  const revenueEngine = new RevenueEngine({ eventBus, store });
+  const extensionGovernance = new ExtensionGovernance({ eventBus, store });
+  const aiExtensionLayer = new AIExtensionLayer({ eventBus, store });
+  const extensionDevTools = new ExtensionDevTools({ eventBus, store });
+  const compatibilityMatrix = new CompatibilityMatrix({ eventBus, store });
+
+  runtime.registerModule("extensionRegistry", extensionRegistry);
+  runtime.registerModule("marketplaceCatalog", marketplaceCatalog);
+  runtime.registerModule("revenueEngine", revenueEngine);
+  runtime.registerModule("extensionGovernance", extensionGovernance);
+  runtime.registerModule("aiExtensionLayer", aiExtensionLayer);
+  runtime.registerModule("extensionDevTools", extensionDevTools);
+  runtime.registerModule("compatibilityMatrix", compatibilityMatrix);
+
+  logger.info("main", "Phase 8 modules registered");
+
+  // Phase 9 Modules
+  const mobileRuntimeContract = new MobileRuntimeContract({ eventBus, store });
+  const capabilityDeclarationSystem = new CapabilityDeclarationSystem({ eventBus, store });
+  const mobilePolicyEngine = new MobilePolicyEngine({ eventBus, store });
+  const mobileAwarePlanner = new MobileAwarePlanner({ eventBus, store });
+  const previewParityEnforcement = new PreviewParityEnforcement({ eventBus, store });
+  const governedBuildPipeline = new GovernedBuildPipeline({ eventBus, store });
+  const enterpriseRegulatedProfiles = new EnterpriseRegulatedProfiles({ eventBus, store });
+  const mobileVersioningRollback = new MobileVersioningRollback({ eventBus, store });
+  const securityThreatModeling = new SecurityThreatModeling({ eventBus, store });
+  const mobileReadinessDashboard = new MobileReadinessDashboard({ eventBus, store });
+  const capabilityInspector = new CapabilityInspector({ eventBus, store });
+
+  runtime.registerModule("mobileRuntimeContract", mobileRuntimeContract);
+  runtime.registerModule("capabilityDeclarationSystem", capabilityDeclarationSystem);
+  runtime.registerModule("mobilePolicyEngine", mobilePolicyEngine);
+  runtime.registerModule("mobileAwarePlanner", mobileAwarePlanner);
+  runtime.registerModule("previewParityEnforcement", previewParityEnforcement);
+  runtime.registerModule("governedBuildPipeline", governedBuildPipeline);
+  runtime.registerModule("enterpriseRegulatedProfiles", enterpriseRegulatedProfiles);
+  runtime.registerModule("mobileVersioningRollback", mobileVersioningRollback);
+  runtime.registerModule("securityThreatModeling", securityThreatModeling);
+  runtime.registerModule("mobileReadinessDashboard", mobileReadinessDashboard);
+  runtime.registerModule("capabilityInspector", capabilityInspector);
+
+  logger.info("main", "Phase 9 modules registered");
 
   // ── Step 25: Start all modules ─────────────────────────────────────────────
-  await runtime.startAllModules();
+  runtime.start();
 
   // ── Step 26: Wire persistence auto-save ────────────────────────────────────
-  storageEngine.wireAutoSave(store);
+  store.subscribe(() => storageEngine.save(store.getState()));
 
   // ── Step 27: Wire save-requested event ─────────────────────────────────────
   eventBus.on('app:save-requested', () => storageEngine.save(store.getState()));
@@ -397,6 +417,23 @@ async function boot() {
 
   // ── Step 32: Wire AI Generation events (with safety + governance + billing) ──
   aiGenerationEngine.wireEvents(eventBus, store, budgetEngine, aiSafetyBoundary, aiGovernanceLayer, usageLedger);
+  eventBus.on("ai:generate_requested", async ({ prompt, context, options }) => {
+    store.dispatch({ type: "AI/SET_PLANNING", payload: true });
+    store.dispatch({ type: "AI/CLEAR_INTENT" });
+    try {
+      const result = await aiGenerationEngine.generate({ prompt, context, options });
+      if (result.ok) {
+        pageManager.setActivePage(pageManager.addPage({ name: result.intent.appName || "New App", content: result.schema }));
+      } else {
+        toastManager.show(`AI Generation failed: ${result.error}`, "error", 5000);
+      }
+    } catch (err) {
+      errorBoundary.capture(err, { module: "main", context: "ai:generate_requested" });
+      toastManager.show(`AI Generation error: ${err.message}`, "error", 5000);
+    } finally {
+      store.dispatch({ type: "AI/SET_PLANNING", payload: false });
+    }
+  });
 
   // ── Step 33: Wire Auth events ──────────────────────────────────────────────
   authManager.wireEvents();
@@ -405,47 +442,71 @@ async function boot() {
   syncEngine.wireEvents(eventBus, store);
 
   // ── Step 35: Wire Governance events ────────────────────────────────────────
-  aiGovernanceLayer.wireEvents(eventBus, store);
+  aiGovernanceLayer.wireEvents();
+  extensionGovernance.wireEvents();
 
   // ── Step 36: Wire Billing events ───────────────────────────────────────────
-  usageLedger.wireEvents(eventBus, store);
-  entitlementManager.wireEvents(eventBus, store);
-  limitEnforcementEngine.wireEvents(eventBus, store);
-  aiCostGovernance.wireEvents(eventBus, store);
-  billingProviders.wireEvents(eventBus, store);
-  abuseDetector.wireEvents(eventBus, store);
-  billingDashboard.wireEvents(eventBus, store);
-  upgradeEngine.wireEvents(eventBus, store);
-  enterpriseBilling.wireEvents(eventBus, store);
-
-  // ── Phase 8: Wire Extension & Marketplace events ───────────────────────────
-  aiExtensionLayer.wireEvents(eventBus, store);
-  extensionGovernance.wireEvents(eventBus, store);
-  extensionRegistry.wireEvents(eventBus, store);
-  marketplaceCatalog.wireEvents(eventBus, store);
-  revenueEngine.wireEvents(eventBus, store);
-  compatibilityMatrix.wireEvents(eventBus, store);
-  extensionDevTools.wireEvents(eventBus, store);
+  billingProviderRegistry.wireEvents();
+  abuseDetector.wireEvents();
+  billingDashboard.wireEvents();
+  upgradeEngine.wireEvents();
+  enterpriseBilling.wireEvents();
 
   // ── Step 37: Mark as booted ────────────────────────────────────────────────
-  store.dispatch({ type: 'FLAGS/SET_BOOTED' });
-  logger.info('main', 'Nuvra booted successfully!');
+  store.dispatch({ type: 'APP/SET_BOOTED', payload: true });
 
-  // ── Helper to get environment variables ────────────────────────────────────
-  function _getEnvVar(name) {
-    // In a browser environment, process.env is not available. Use a global or window object if defined.
-    // For local development, we might inject these via a build step or a separate config file.
-    if (typeof process !== 'undefined' && process.env && process.env[name]) {
-      return process.env[name];
-    }
-    // Fallback for browser-like environments or if process.env is not set up
-    return window._nuvraEnv?.[name] || null;
-  }
+  logger.info('main', 'Nuvra booted.');
+
+  // ── Debugging ──────────────────────────────────────────────────────────────
+  window.store = store;
+  window.eventBus = eventBus;
+  window.runtime = runtime;
+  window.pageManager = pageManager;
+  window.aiGenerationEngine = aiGenerationEngine;
+  window.budgetEngine = budgetEngine;
+  window.aiSafetyBoundary = aiSafetyBoundary;
+  window.aiGovernanceLayer = aiGovernanceLayer;
+  window.usageLedger = usageLedger;
+  window.entitlementManager = entitlementManager;
+  window.limitEnforcementEngine = limitEnforcementEngine;
+  window.aiCostGovernance = aiCostGovernance;
+  window.billingProviderRegistry = billingProviderRegistry;
+  window.abuseDetector = abuseDetector;
+  window.billingDashboard = billingDashboard;
+  window.upgradeEngine = upgradeEngine;
+  window.enterpriseBilling = enterpriseBilling;
+  window.extensionRegistry = extensionRegistry;
+  window.marketplaceCatalog = marketplaceCatalog;
+  window.revenueEngine = revenueEngine;
+  window.extensionGovernance = extensionGovernance;
+  window.aiExtensionLayer = aiExtensionLayer;
+  window.extensionDevTools = extensionDevTools;
+  window.compatibilityMatrix = compatibilityMatrix;
 }
 
-// Start the boot process
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function _getEnvVar(name) {
+  // In a browser environment, process.env is not available.
+  // We'll assume environment variables are inlined during build or served via a global config.
+  // For local development, you might manually set window.NUVRA_ENV_VARS = { ... }
+  if (typeof window !== 'undefined' && window.NUVRA_ENV_VARS && window.NUVRA_ENV_VARS[name]) {
+    return window.NUVRA_ENV_VARS[name];
+  }
+  // Fallback for Node.js environments (e.g., build scripts)
+  if (typeof process !== 'undefined' && process.env && process.env[name]) {
+    return process.env[name];
+  }
+  return undefined;
+}
+
+// ─── Start Boot Sequence ──────────────────────────────────────────────────────
 boot().catch(err => {
-  logger.error('main', 'Fatal error during Nuvra boot', err);
-  errorBoundary.handleError(err, ErrorSeverity.CRITICAL, 'NuvraBoot');
-  toastManager.show('Nuvra failed to start. Please check the console for details.', 'error', 0);
+  console.error('Failed to boot Nuvra:', err);
+  document.body.innerHTML = `
+    <div style="padding: 20px; font-family: sans-serif; color: #f44336;">
+      <h1>Nuvra Boot Error</h1>
+      <p>An unexpected error occurred during startup. Please check the console for details.</p>
+      <pre>${err.message}</pre>
+    </div>
+  `;
 });
